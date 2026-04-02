@@ -1,0 +1,39 @@
+<div class="module-header">
+    <div style="display: flex; flex-direction: column;">
+        <h2 style="color: var(--danger-color); display: flex; align-items: center; gap: 10px;">
+            <i data-feather="alert-triangle"></i> CẢNH BÁO TỒN KHO
+        </h2>
+        <p style="color: var(--text-secondary); margin-top: 5px;">
+            Danh sách các mặt hàng đã chạm định mức tối thiểu.
+        </p>
+    </div>
+    <button class="btn-primary" id="btnSendAlert" style="background: var(--danger-color); border-color: var(--danger-color);">
+        <i data-feather="send"></i> <span class="text">Gửi Mail Báo Động</span>
+        <div class="spinner"></div>
+    </button>
+</div>
+
+<div class="table-card" style="border: 1px solid var(--danger-color);">
+    <table class="data-table" id="alertsTable">
+        <thead>
+            <tr>
+                <th>Mã SP</th>
+                <th>Tên Sản Phẩm</th>
+                <th style="color: var(--danger-color);">Tồn kho hiện tại</th>
+                <th>Tồn tối thiểu (Min)</th>
+                <th>Nhà Cung Cấp</th>
+                <th>Liên hệ</th>
+            </tr>
+        </thead>
+        <tbody id="alertsBody">
+            <tr>
+                <td colspan="6" style="text-align: center; padding: 40px;">
+                    <div class="spinner" style="display:inline-block; border-top-color: var(--danger-color);"></div>
+                    <p style="margin-top: 10px; color: var(--text-secondary)">Đang rà soát kho...</p>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<?!= include('AlertsJS'); ?>

@@ -1,0 +1,61 @@
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    loadAlerts();
+
+    document.getElementById('btnSendAlert').addEventListener('click', function() {
+        if(!confirm("Hệ thống sẽ gửi email báo cáo tình trạng thiếu hàng đến Ban Giám Đốc và Bộ Phận Mua Hàng. Tiếp tục?")) {
+            return;
+        }
+        
+        const btn = this;
+        btn.classList.add('loading');
+        
+        google.script.run
+            .withSuccessHandler(function(res) {
+                btn.classList.remove('loading');
+                alert(res.message);
+            })
+            .triggerAlertEmail();
+    });
+});
+
+function loadAlerts() {
+    google.script.run
+        .withSuccessHandler(function(res) {
+            if(res.success) {
+                renderAlertsTable(res.data);
+            } else {
+                alert("Lỗi tải cảnh báo: " + res.message);
+            }
+        })
+        .getLowStockProducts();
+}
+
+function renderAlertsTable(data) {
+    const tbody = document.getElementById('alertsBody');
+    if (data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color: var(--success-color);"><i data-feather="check-circle" style="display: block; margin: 0 auto 10px;"></i> Tất cả hàng hoá đều ở mức an toàn định mức!</td></tr>`;
+        feather.replace();
+        // Ẩn nút gửi mail nếu không có gì để cảnh báo
+        document.getElementById('btnSendAlert').style.display = 'none';
+        return;
+    }
+
+    let html = '';
+    data.forEach(item => {
+        html += `
+        <tr class="data-row" style="background: rgba(239, 68, 68, 0.05);">
+            <td class="fw-bold">${item.Product_ID}</td>
+            <td>${item.Product_Name}</td>
+            <td style="color: var(--danger-color); font-weight: bold;">${item.Current_Stock}</td>
+            <td>${item.Min_Stock}</td>
+            <td>${item.Supplier_Name}</td>
+            <td><code style="font-size: 11px;">${item.Supplier_Phone}</code></td>
+        </tr>`;
+    });
+    
+    tbody.innerHTML = html;
+    document.getElementById('btnSendAlert').style.display = 'flex';
+    feather.replace();
+}
+</script>

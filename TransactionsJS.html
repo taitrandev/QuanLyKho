@@ -1,0 +1,176 @@
+<script>
+let globalTxnProducts = [];
+
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Load Dropdown Data
+    loadFormData();
+    
+    // 2. Load History Data
+    loadTransactions();
+
+    // 3. Sự kiện đổi Sản Phẩm -> Hiện Tồn Kho
+    document.getElementById('productId').addEventListener('change', function() {
+       const pid = this.value;
+       const label = document.getElementById('stockLabel');
+       if(!pid) {
+           label.style.display = 'none';
+           return;
+       }
+       const found = globalTxnProducts.find(p => p.Product_ID === pid);
+       if(found) {
+           label.innerText = `📦 Tồn kho thực tế: ${found.Current_Stock}`;
+           label.style.display = 'block';
+       }
+    });
+
+    // 4. Form Submit
+    document.getElementById('txnForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const type = document.getElementById('txnType').value;
+        const pid = document.getElementById('productId').value;
+        const qty = parseInt(document.getElementById('quantity').value);
+        
+        // Client Validation
+        if (type === 'Xuất') {
+             const prod = globalTxnProducts.find(p => p.Product_ID === pid);
+             if (prod && qty > prod.Current_Stock) {
+                 alert(`Lỗi: Tồn kho chỉ còn ${prod.Current_Stock}. Không thể xuất ${qty}!`);
+                 return;
+             }
+        }
+
+        const btnSave = document.getElementById('btnSaveTxn');
+        btnSave.classList.add('loading');
+        
+        // Lấy User từ session
+        const sessionUser = JSON.parse(sessionStorage.getItem('warehouse_user') || '{}');
+        const email = sessionUser.email || 'Unknown';
+
+        const formObj = {
+             type: type,
+             productId: pid,
+             quantity: qty,
+             supplierId: document.getElementById('supplierId').value,
+             note: document.getElementById('note').value,
+             userEmail: email
+        };
+
+        google.script.run
+            .withSuccessHandler(function(res) {
+                btnSave.classList.remove('loading');
+                if(res.success) {
+                    alert(res.message);
+                    document.getElementById('txnForm').reset();
+                    // Đặt lại trang thái
+                    selectType('Nhập');
+                    document.getElementById('stockLabel').style.display = 'none';
+                    
+                    // Cập nhật lại lịch sử và dropdown (để tính lại tồn kho mới nhất)
+                    loadFormData();
+                    loadTransactions();
+                } else {
+                    alert("Lỗi: " + res.message);
+                }
+            })
+            .saveTransaction(formObj);
+    });
+});
+
+function selectType(type) {
+    document.getElementById('txnType').value = type;
+    
+    const btnNhap = document.getElementById('btnTypeNhap');
+    const btnXuat = document.getElementById('btnTypeXuat');
+    const suppGroup = document.getElementById('supplierGroup');
+    const suppInput = document.getElementById('supplierId');
+    
+    if (type === 'Nhập') {
+        btnNhap.classList.add('active');
+        btnXuat.classList.remove('active');
+        suppGroup.style.display = 'block';
+        suppInput.setAttribute('required', 'required');
+    } else {
+        btnXuat.classList.add('active');
+        btnNhap.classList.remove('active');
+        suppGroup.style.display = 'none';
+        suppInput.removeAttribute('required');
+    }
+}
+
+function loadFormData() {
+    google.script.run
+        .withSuccessHandler(function(res) {
+            if (res.success) {
+                globalTxnProducts = res.products;
+                
+                // Render Products Dropdown
+                const pSelect = document.getElementById('productId');
+                pSelect.innerHTML = '<option value="">-- Chọn sản phẩm --</option>';
+                res.products.forEach(p => {
+                    pSelect.innerHTML += `<option value="${p.Product_ID}">[${p.Product_ID}] ${p.Product_Name}</option>`;
+                });
+                pSelect.removeAttribute('disabled');
+                
+                // Render Suppliers Dropdown
+                const sSelect = document.getElementById('supplierId');
+                sSelect.innerHTML = '<option value="">-- Chọn Nhà cung cấp --</option>';
+                res.suppliers.forEach(s => {
+                    sSelect.innerHTML += `<option value="${s.Supplier_ID}">${s.Supplier_Name}</option>`;
+                });
+                sSelect.removeAttribute('disabled');
+
+            } else {
+                alert("Lỗi tải Dropdown: " + res.message);
+            }
+        })
+        .getTxnFormData();
+}
+
+function loadTransactions() {
+    const tbody = document.getElementById('txnBody');
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center;"><div class="spinner" style="display:inline-block; border-top-color: var(--accent-primary);"></div></td></tr>`;
+    
+    google.script.run
+        .withSuccessHandler(function(res) {
+            if(res.success) {
+                renderTxnTable(res.data);
+            }
+        })
+        .getTransactionsData();
+}
+
+function renderTxnTable(data) {
+    const tbody = document.getElementById('txnBody');
+    if (data.length === 0) {
+         tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;">Lịch sử trống</td></tr>`;
+         feather.replace();
+         return;
+    }
+    
+    let html = '';
+    data.forEach(item => {
+         let typeHtml = item.Type === 'Nhập' 
+             ? `<span class="chip chip-success" style="font-size: 11px;">Nhập Kho</span>` 
+             : `<span class="chip chip-danger" style="font-size: 11px;">Xuất Kho</span>`;
+             
+         // Rút gọn ID và format Time để hiển thị gọn
+         let timeSlice = (item.Created_At || "").substring(5, 16); // Bỏ yyyy-
+         
+         html += `
+         <tr>
+             <td><code style="font-size: 11px;">${item.Trans_ID}</code></td>
+             <td style="font-size: 12px; color: var(--text-secondary);">${timeSlice}</td>
+             <td>${typeHtml}</td>
+             <td style="max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${item.Product_Name}">
+                  ${item.Product_Name}
+             </td>
+             <td class="fw-bold">${item.Quantity}</td>
+             <td style="font-size: 11px;">${item.Created_By || '-'}</td>
+         </tr>
+         `;
+    });
+    tbody.innerHTML = html;
+    feather.replace();
+}
+</script>

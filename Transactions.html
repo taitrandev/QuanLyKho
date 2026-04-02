@@ -1,0 +1,143 @@
+<style>
+.tx-container {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+}
+
+.tx-form {
+    flex: 1;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 24px;
+}
+
+.tx-history {
+    flex: 2;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 24px;
+    overflow-x: auto;
+}
+
+.tx-type-toggle {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.tx-type-btn {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    background: transparent;
+    border-radius: 8px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.tx-type-btn.active.type-nhap {
+    background: rgba(34, 197, 94, 0.1);
+    color: var(--success-color);
+    border-color: var(--success-color);
+}
+
+.tx-type-btn.active.type-xuat {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--danger-color);
+    border-color: var(--danger-color);
+}
+
+.current-stock-label {
+    display: block;
+    margin-top: 5px;
+    font-size: 13px;
+    color: var(--accent-primary);
+    font-weight: 500;
+}
+</style>
+
+<div class="module-header" style="margin-bottom: 24px;">
+    <h2>Ghi Nhận Nhập / Xuất Kho</h2>
+</div>
+
+<div class="tx-container">
+    <!-- Cột Form Lập Phiếu -->
+    <div class="tx-form">
+        <h3 style="margin-bottom: 20px;">Tạo Chứng Từ Mới</h3>
+        
+        <div class="tx-type-toggle">
+            <button type="button" class="tx-type-btn active type-nhap" id="btnTypeNhap" onclick="selectType('Nhập')">Nhập Kho (IN)</button>
+            <button type="button" class="tx-type-btn type-xuat" id="btnTypeXuat" onclick="selectType('Xuất')">Xuất Kho (OUT)</button>
+        </div>
+
+        <form id="txnForm">
+            <input type="hidden" id="txnType" value="Nhập">
+
+            <div class="form-group">
+                <label class="form-label">Sản Phẩm *</label>
+                <select id="productId" class="form-control" required disabled>
+                    <option value="">Đang tải danh sách...</option>
+                </select>
+                <span class="current-stock-label" id="stockLabel" style="display: none;">Tồn kho khả dụng: 0</span>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Số Lượng *</label>
+                <input type="number" id="quantity" class="form-control" required min="1" placeholder="Vd: 100">
+            </div>
+
+            <div class="form-group" id="supplierGroup">
+                <label class="form-label">Nhà Cung Cấp *</label>
+                <select id="supplierId" class="form-control" required disabled>
+                    <option value="">Đang tải danh sách...</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Ghi chú (Note)</label>
+                <textarea id="note" class="form-control" rows="2" placeholder="Lý do xuất, số hoá đơn..."></textarea>
+            </div>
+
+            <button type="submit" class="btn-primary" id="btnSaveTxn" style="width: 100%; justify-content: center;">
+                <span class="text">Lưu Giao Dịch</span>
+                <div class="spinner"></div>
+            </button>
+        </form>
+    </div>
+
+    <!-- Cột Lịch Sử -->
+    <div class="tx-history">
+        <h3 style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+            <span>Lịch Sử Giao Dịch Gần Đây</span>
+            <button class="icon-btn" onclick="loadTransactions()" title="Làm mới bảng"><i data-feather="refresh-cw"></i></button>
+        </h3>
+        
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Mã Phiếu</th>
+                    <th>Thời gian</th>
+                    <th>Loại</th>
+                    <th>Sản phẩm</th>
+                    <th>SL</th>
+                    <th>Người lập</th>
+                </tr>
+            </thead>
+            <tbody id="txnBody">
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 40px;">
+                        <div class="spinner" style="display:inline-block; border-top-color: var(--accent-primary);"></div>
+                        <p style="margin-top: 10px; color: var(--text-secondary)">Đang tải lịch sử...</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<?!= include('TransactionsJS'); ?>
