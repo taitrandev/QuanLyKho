@@ -39,7 +39,8 @@ document.addEventListener('DOMContentLoaded', () => {
             email: document.getElementById('email').value,
             fullName: document.getElementById('fullName').value,
             role: document.getElementById('role').value,
-            password: document.getElementById('password').value
+            password: document.getElementById('password').value,
+            operatorEmail: user.email
         };
 
         // If editing, wait -> if password blank, backend handles keeping old.
@@ -174,6 +175,8 @@ function toggleStatus(id, turnOnFlag) {
         cancelButtonText: 'Hủy'
     }).then((result) => {
         if (result.isConfirmed) {
+            const sessionStr = sessionStorage.getItem('warehouse_user');
+            const opEmail = sessionStr ? JSON.parse(sessionStr).email : '';
             google.script.run
                 .withSuccessHandler(function(res) {
                     if(res.success) {
@@ -183,7 +186,7 @@ function toggleStatus(id, turnOnFlag) {
                         Toast.fire({ icon: 'error', title: "Lỗi Update: " + res.message });
                     }
                 })
-                .toggleUserStatus(id, turnOnFlag);
+                .toggleUserStatus(id, turnOnFlag, opEmail);
         }
     });
 }

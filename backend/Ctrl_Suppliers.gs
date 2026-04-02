@@ -15,6 +15,7 @@ function getSuppliersData() {
 
 function saveSupplier(formObj) {
   try {
+    checkPermission(formObj.operatorEmail, ['admin']);
     const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Suppliers");
     if (!sheet) return { success: false, message: "Không tìm thấy CSDL Suppliers" };
     
@@ -49,8 +50,9 @@ function saveSupplier(formObj) {
   }
 }
 
-function deleteSupplier(supplierId) {
+function deleteSupplier(supplierId, operatorEmail) {
    try {
+     checkPermission(operatorEmail, ['admin']);
      const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Suppliers");
      const data = sheet.getDataRange().getValues();
      

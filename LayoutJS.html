@@ -18,7 +18,15 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('userRole').textContent = user.role || 'Staff';
         if (user.name) document.getElementById('userAvatar').textContent = user.name.charAt(0).toUpperCase();
 
-        // Ẩn menu Admin nếu không phải admin
+        // Ẩn/Hiện menu dựa trên Role
+        document.querySelectorAll('li[data-roles]').forEach(el => {
+            const allowedRoles = el.getAttribute('data-roles').split(',');
+            if (!allowedRoles.includes(user.role)) {
+                el.style.display = 'none';
+            }
+        });
+        
+        // Hỗ trợ ngược cho data-req-admin cũ nếu có
         if (user.role !== 'admin') {
             document.querySelectorAll('li[data-req-admin="true"]').forEach(el => {
                 el.style.display = 'none';

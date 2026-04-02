@@ -21,6 +21,7 @@ function getUsersData() {
 
 function saveUser(formObj) {
   try {
+    checkPermission(formObj.operatorEmail, ['admin']);
     const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Users");
     if (!sheet) return { success: false, message: "Không tìm thấy CSDL Users" };
     
@@ -69,8 +70,9 @@ function saveUser(formObj) {
   }
 }
 
-function toggleUserStatus(userId, turnOn) {
+function toggleUserStatus(userId, turnOn, operatorEmail) {
    try {
+     checkPermission(operatorEmail, ['admin']);
      const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Users");
      const data = sheet.getDataRange().getValues(); // Load whole
      

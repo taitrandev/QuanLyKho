@@ -74,6 +74,7 @@ function getTxnFormData() {
 
 function saveTransaction(formObj) {
   try {
+     checkPermission(formObj.userEmail, ['admin', 'warehouse_staff']);
      const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Transactions");
      if (!sheet) return { success: false, message: "Không tìm thấy Sheet Transactions" };
      

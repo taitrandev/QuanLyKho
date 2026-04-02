@@ -39,7 +39,8 @@ document.addEventListener('DOMContentLoaded', () => {
             contactPerson: document.getElementById('contactPerson').value,
             phone: document.getElementById('phone').value,
             email: document.getElementById('email').value,
-            address: document.getElementById('address').value
+            address: document.getElementById('address').value,
+            operatorEmail: user.email
         };
 
         google.script.run
@@ -139,6 +140,7 @@ function deleteMode(id) {
         cancelButtonText: 'Hủy'
     }).then((result) => {
         if (result.isConfirmed) {
+            const user = JSON.parse(sessionStorage.getItem('warehouse_user') || '{}');
             google.script.run
                 .withSuccessHandler(function(res) {
                     if(res.success) {
@@ -148,7 +150,7 @@ function deleteMode(id) {
                         Toast.fire({ icon: 'error', title: "Lỗi Xóa: " + res.message });
                     }
                 })
-                .deleteSupplier(id);
+                .deleteSupplier(id, user.email);
         }
     });
 }

@@ -47,8 +47,10 @@ function getLowStockProducts() {
   }
 }
 
-function triggerAlertEmail() {
+function triggerAlertEmail(operatorEmail) {
    try {
+      checkPermission(operatorEmail, ['admin']);
+      
       // 1. Phân tích data kho
       const alertData = getLowStockProducts();
       if(!alertData.success) throw new Error(alertData.message);

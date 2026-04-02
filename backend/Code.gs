@@ -106,3 +106,24 @@ function login(email, password) {
     return { success: false, message: "Lỗi Server: " + error.toString() };
   }
 }
+
+/**
+ * Kiểm tra quyền của người dùng dựa vào Email từ Token/sessionStorage (Basic Auth)
+ */
+function checkPermission(email, requiredRoles) {
+  if (!email) throw new Error("Yêu cầu cung cấp Email để xác thực (Missing Email Token)");
+  
+  const users = getSheetDataAsObjects('Users');
+  const user = users.find(u => u.Email.toString().toLowerCase() === email.toString().toLowerCase());
+  
+  if (!user) throw new Error("Không tìm thấy tài khoản trong hệ thống: " + email);
+  
+  const isActive = user.Active === true || user.Active === 'TRUE';
+  if (!isActive) throw new Error("Tài khoản của bạn đã bị vô hiệu hóa.");
+  
+  if (requiredRoles.indexOf(user.Role) === -1) {
+     throw new Error("Lỗi Bảo Mật: Tài khoản không có quyền thực hiện thao tác này. (Yêu cầu quyền: " + requiredRoles.join(', ') + ")");
+  }
+  
+  return user;
+}

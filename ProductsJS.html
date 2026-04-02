@@ -34,6 +34,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const btnSave = document.getElementById('btnSaveProduct');
         btnSave.classList.add('loading'); // Kích hoạt animation spinner
         
+        const sessionStr = sessionStorage.getItem('warehouse_user');
+        const email = sessionStr ? JSON.parse(sessionStr).email : '';
+        
         // Đóng gói data
         const formObj = {
             rowIndex: document.getElementById('rowIndex').value,
@@ -43,7 +46,8 @@ document.addEventListener('DOMContentLoaded', () => {
             supplierId: document.getElementById('supplierId').value,
             unit: document.getElementById('unit').value,
             unitPrice: document.getElementById('unitPrice').value,
-            minStock: document.getElementById('minStock').value
+            minStock: document.getElementById('minStock').value,
+            operatorEmail: email
         };
 
         // Gọi Backend Cập nhật/Thêm mới
@@ -98,14 +102,30 @@ function renderTable(data) {
     }
 
     let html = '';
+    const sessionStr = sessionStorage.getItem('warehouse_user');
+    const userRole = sessionStr ? JSON.parse(sessionStr).role : 'viewer';
+    
+    // Hide 'Thêm Sản Phẩm' button if not admin
+    const btnAddNew = document.getElementById('btnAddNew');
+    if (btnAddNew) {
+        btnAddNew.style.display = (userRole === 'admin') ? 'inline-block' : 'none';
+    }
+
     data.forEach(item => {
-        
         let statusHtml = '';
         if (item.Status === 'empty') statusHtml = `<span class="chip chip-danger"><span class="dot"></span> Hết hàng</span>`;
         else if (item.Status === 'low') statusHtml = `<span class="chip chip-warning"><span class="dot"></span> Sắp hết</span>`;
         else statusHtml = `<span class="chip chip-success"><span class="dot"></span> Đủ kho</span>`;
 
         const pPrice = item.Unit_Price ? Number(item.Unit_Price).toLocaleString('vi-VN') + ' đ' : '-';
+        
+        let actionButtons = '';
+        if (userRole === 'admin') {
+            actionButtons = `
+                <button class="action-btn text-accent" onclick="editMode('${item.Product_ID}')" title="Sửa"><i data-feather="edit-2"></i></button>
+                <button class="action-btn text-danger" onclick="deleteMode('${item.Product_ID}')" title="Xóa"><i data-feather="trash-2"></i></button>
+            `;
+        }
 
         html += `
         <tr class="data-row">
@@ -116,10 +136,7 @@ function renderTable(data) {
             <td style="text-align: right;">${pPrice}</td>
             <td style="text-align: right; font-weight: 600;">${item.Current_Stock} ${item.Unit || ''}</td>
             <td style="text-align: center;">${statusHtml}</td>
-            <td style="text-align: center;">
-                <button class="action-btn text-accent" onclick="editMode('${item.Product_ID}')" title="Sửa"><i data-feather="edit-2"></i></button>
-                <button class="action-btn text-danger" onclick="deleteMode('${item.Product_ID}')" title="Xóa"><i data-feather="trash-2"></i></button>
-            </td>
+            <td style="text-align: center;">${actionButtons}</td>
         </tr>`;
     });
     
@@ -174,6 +191,9 @@ function deleteMode(id) {
         cancelButtonText: 'Hủy'
     }).then((result) => {
         if (result.isConfirmed) {
+            const sessionStr = sessionStorage.getItem('warehouse_user');
+            const email = sessionStr ? JSON.parse(sessionStr).email : '';
+            
             google.script.run
                 .withSuccessHandler(function(res) {
                     if(res.success) {
@@ -183,7 +203,7 @@ function deleteMode(id) {
                         Toast.fire({ icon: 'error', title: "Lỗi Xóa: " + res.message });
                     }
                 })
-                .deleteProduct(id);
+                .deleteProduct(id, email);
         }
     });
 }

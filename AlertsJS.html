@@ -14,13 +14,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }).then((result) => {
             if (result.isConfirmed) {
                 btn.classList.add('loading');
+                const sessionStr = sessionStorage.getItem('warehouse_user');
+                const email = sessionStr ? JSON.parse(sessionStr).email : '';
+                
                 google.script.run
                     .withSuccessHandler(function(res) {
                         btn.classList.remove('loading');
                         if(res.success) Toast.fire({ icon: 'success', title: res.message });
                         else Toast.fire({ icon: 'error', title: res.message });
                     })
-                    .triggerAlertEmail();
+                    .triggerAlertEmail(email);
             }
         });
     });
@@ -62,7 +65,15 @@ function renderAlertsTable(data) {
     });
     
     tbody.innerHTML = html;
-    document.getElementById('btnSendAlert').style.display = 'flex';
+    
+    const sessionStr = sessionStorage.getItem('warehouse_user');
+    const userRole = sessionStr ? JSON.parse(sessionStr).role : 'viewer';
+    if (userRole === 'admin') {
+        document.getElementById('btnSendAlert').style.display = 'flex';
+    } else {
+        document.getElementById('btnSendAlert').style.display = 'none';
+    }
+    
     feather.replace();
 }
 </script>

@@ -2,6 +2,15 @@
 let globalTxnProducts = [];
 
 document.addEventListener('DOMContentLoaded', () => {
+    const sessionStr = sessionStorage.getItem('warehouse_user');
+    const userRole = sessionStr ? JSON.parse(sessionStr).role : 'viewer';
+    if (userRole === 'viewer') {
+        const main = document.querySelector('.main-content');
+        if(main) main.innerHTML = '<div style="padding: 50px; text-align: center; color: var(--danger-color);"><h3><i data-feather="lock"></i> Từ chối truy cập</h3><p>Bạn không có quyền vào trang này.</p></div>';
+        feather.replace();
+        return;
+    }
+
     // 1. Load Dropdown Data
     loadFormData();
     

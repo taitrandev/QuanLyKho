@@ -73,6 +73,8 @@ function getFormDataOptions() {
  */
 function saveProduct(formObj) {
   try {
+    checkPermission(formObj.operatorEmail, ['admin']);
+    
     const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Products");
     if (!sheet) return { success: false, message: "Không tìm thấy CSDL Products" };
     
@@ -114,8 +116,9 @@ function saveProduct(formObj) {
 /**
  * Xóa vật lý một Sản phẩm
  */
-function deleteProduct(productId) {
+function deleteProduct(productId, operatorEmail) {
    try {
+     checkPermission(operatorEmail, ['admin']);
      const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Products");
      const data = sheet.getDataRange().getValues();
      
