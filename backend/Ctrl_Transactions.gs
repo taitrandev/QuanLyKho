@@ -122,7 +122,13 @@ function saveTransaction(formObj) {
      ];
      
      sheet.appendRow(rowData);
-     return { success: true, message: `Thành công! Mã Phao: ${newId}` };
+     
+     // 4. Kiểm tra và bắn cảnh báo ngay lập tức nếu xuất kho làm rớt tồn
+     if (formObj.type === "Xuất") {
+         checkAndNotifyLowStock(formObj.productId);
+     }
+     
+     return { success: true, message: `Thành công! Mã Phiếu: ${newId}` };
      
   } catch(err) {
      return { success: false, message: err.toString() };

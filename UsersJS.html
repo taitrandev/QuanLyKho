@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const sessionStr = sessionStorage.getItem('warehouse_user');
     const user = JSON.parse(sessionStr || '{}');
     if (user.role !== 'admin') {
-        alert("Khu vực này chỉ dành cho Quản Trị Viên!");
+        Toast.fire({ icon: 'warning', title: "Khu vực này chỉ dành cho Quản Trị Viên!" });
         window.location.href = APP_URL + "?page=Dashboard";
         return;
     }
@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // If editing, wait -> if password blank, backend handles keeping old.
         // But if creating new, password is required.
         if (!formObj.rowIndex && !formObj.password) {
-            alert("Vui lòng khởi tạo mật khẩu cho tài khoản mới!");
+            Toast.fire({ icon: 'warning', title: "Vui lòng khởi tạo mật khẩu cho tài khoản mới!" });
             btnSave.classList.remove('loading');
             return;
         }
@@ -55,9 +55,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 btnSave.classList.remove('loading');
                 if(res.success) {
                     modal.classList.remove('active');
+                    Toast.fire({ icon: 'success', title: "Lưu thành công!" });
                     loadUsers();
                 } else {
-                    alert("Lỗi hệ thống: " + res.message);
+                    Toast.fire({ icon: 'error', title: "Lỗi hệ thống: " + res.message });
                 }
             })
             .saveUser(formObj);
@@ -71,7 +72,7 @@ function loadUsers() {
                 globalUsersData = res.data;
                 renderTable(res.data);
             } else {
-                alert("Lỗi tải data: " + res.message);
+                Toast.fire({ icon: 'error', title: "Lỗi tải data: " + res.message });
             }
         })
         .getUsersData();
@@ -159,17 +160,31 @@ function openAddModal() {
 }
 
 function toggleStatus(id, turnOnFlag) {
-    const action = turnOnFlag ? "MỞ KHOÁ" : "VÔ HIỆU HÓA";
-    if(confirm(`Bạn có chắc chắn muốn ${action} tài khoản mã [${id}] không?`)) {
-        google.script.run
-            .withSuccessHandler(function(res) {
-                if(res.success) {
-                    loadUsers();
-                } else {
-                    alert("Lỗi Update: " + res.message);
-                }
-            })
-            .toggleUserStatus(id, turnOnFlag);
-    }
+    const action = turnOnFlag ? "MỞ KHÓA" : "VÔ HIỆU HÓA";
+    const actionColor = turnOnFlag ? '#3085d6' : '#d33';
+    
+    Swal.fire({
+        title: 'Xác nhận',
+        text: `Bạn có chắc chắn muốn ${action} tài khoản mã [${id}] không?`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: actionColor,
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Đồng ý',
+        cancelButtonText: 'Hủy'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            google.script.run
+                .withSuccessHandler(function(res) {
+                    if(res.success) {
+                        Toast.fire({ icon: 'success', title: "Cập nhật thành công!" });
+                        loadUsers();
+                    } else {
+                        Toast.fire({ icon: 'error', title: "Lỗi Update: " + res.message });
+                    }
+                })
+                .toggleUserStatus(id, turnOnFlag);
+        }
+    });
 }
 </script>

@@ -52,9 +52,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 btnSave.classList.remove('loading');
                 if(res.success) {
                     modal.classList.remove('active');
+                    Toast.fire({ icon: 'success', title: "Lưu thành công!" });
                     loadProducts(); // Update UI table automatically
                 } else {
-                    alert("Lỗi hệ thống: " + res.message);
+                    Toast.fire({ icon: 'error', title: "Lỗi hệ thống: " + res.message });
                 }
             })
             .saveProduct(formObj);
@@ -68,7 +69,7 @@ function loadProducts() {
                 globalProductsData = res.data;
                 renderTable(res.data);
             } else {
-                alert("Lỗi tải data: " + res.message);
+                Toast.fire({ icon: 'error', title: "Lỗi tải data: " + res.message });
             }
         })
         .getProductsData();
@@ -162,18 +163,28 @@ function openAddModal() {
 }
 
 function deleteMode(id) {
-    if(confirm(`Nghiệm trọng: Xoá mã [${id}] sẽ kiến các giao dịch lịch sử bị mất thông tin Sản phẩm tương ứng.\nBạn có chắn chắn muốn xoá khỏi database?`)) {
-        
-        google.script.run
-            .withSuccessHandler(function(res) {
-                if(res.success) {
-                    alert(res.message);
-                    loadProducts(); // Load lại bảng
-                } else {
-                    alert("Lỗi Xóa: " + res.message);
-                }
-            })
-            .deleteProduct(id);
-    }
+    Swal.fire({
+        title: 'Nghiệm trọng',
+        text: `Xóa mã [${id}] sẽ khiến các giao dịch lịch sử bị mất thông tin Sản phẩm tương ứng.\nBạn có chắc chắn muốn xóa khỏi database?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Đồng ý Xóa',
+        cancelButtonText: 'Hủy'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            google.script.run
+                .withSuccessHandler(function(res) {
+                    if(res.success) {
+                        Toast.fire({ icon: 'success', title: res.message });
+                        loadProducts(); // Load lại bảng
+                    } else {
+                        Toast.fire({ icon: 'error', title: "Lỗi Xóa: " + res.message });
+                    }
+                })
+                .deleteProduct(id);
+        }
+    });
 }
 </script>

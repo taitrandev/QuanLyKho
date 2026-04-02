@@ -4,6 +4,16 @@
     <?!= include('Style'); ?>
     <title>Hệ Sinh Thái Kho</title>
     <script src="https://unpkg.com/feather-icons"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <style>
+      .colored-toast.swal2-icon-success { background-color: #28a745 !important; color: white; }
+      .colored-toast.swal2-icon-error { background-color: #dc3545 !important; color: white; }
+      .colored-toast.swal2-icon-warning { background-color: #ffc107 !important; color: black; }
+      .colored-toast.swal2-icon-info { background-color: #17a2b8 !important; color: white; }
+      .colored-toast .swal2-title { color: inherit; font-size: 14px; }
+      .colored-toast .swal2-close { color: inherit; }
+    </style>
 </head>
 <body>
     <div class="dashboard-container" style="display: none;" id="dashboardLayout">
@@ -74,6 +84,18 @@
     <script>
       const APP_URL = "<?= getScriptUrl() ?>";
       const CURRENT_PAGE = "<?= contentPage ?>";
+      
+      const Toast = Swal.mixin({
+          toast: true,
+          position: 'top-end',
+          iconColor: 'white',
+          customClass: {
+            popup: 'colored-toast'
+          },
+          showConfirmButton: false,
+          timer: 3000,
+          timerProgressBar: true
+      });
     </script>
     <?!= include('LayoutJS'); ?>
 </body>

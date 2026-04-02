@@ -1,65 +1,107 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <?!= include('Style'); ?>
-    <title>Hệ Sinh Thái Kho</title>
-    <script src="https://unpkg.com/feather-icons"></script>
-</head>
-<body>
-    <div class="dashboard-container" style="display: none;" id="dashboardLayout">
-        
-        <aside class="sidebar">
-            <div class="sidebar-header">
-                <div class="brand">
-                    <div class="brand-icon">
-                        <i data-feather="box" style="stroke: white;"></i>
-                    </div>
-                    <span>Quản Lý Kho</span>
-                </div>
+<style>
+.dashboard-view { animation: fadeIn 0.4s ease; width: 100%;}
+.header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;}
+.header-actions h1 { font-size: 1.5rem; font-weight: 700; color: #fff; margin:0; }
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 30px; }
+.kpi-card { 
+    background: rgba(30, 41, 59, 0.7); 
+    border: 1px solid rgba(255,255,255,0.1); 
+    border-radius: 12px; 
+    padding: 20px; 
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); 
+    backdrop-filter: blur(10px); 
+    display: flex; 
+    align-items: center; 
+    justify-content: space-between; 
+    position: relative; 
+    overflow: hidden; 
+}
+.kpi-card::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; }
+.kpi-card.blue::before { background: #3b82f6; }
+.kpi-card.green::before { background: #10b981; }
+.kpi-card.red::before { background: #ef4444; }
+.kpi-card.yellow::before { background: #f59e0b; }
+
+.kpi-content h3 { font-size: 0.9rem; color: #94a3b8; font-weight: 500; margin-bottom: 5px; }
+.kpi-content p { font-size: 1.6rem; font-weight: 700; color: #f8fafc; }
+
+.kpi-icon { width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+.kpi-card.blue .kpi-icon { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
+.kpi-card.green .kpi-icon { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+.kpi-card.red .kpi-icon { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+.kpi-card.yellow .kpi-icon { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+
+.charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; }
+.chart-container { 
+    background: rgba(30, 41, 59, 0.7); 
+    border: 1px solid rgba(255,255,255,0.1); 
+    border-radius: 12px; 
+    padding: 20px; 
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); 
+    backdrop-filter: blur(10px); 
+    min-height: 350px; 
+    display:flex; 
+    flex-direction: column;
+}
+.chart-header { font-size: 1.1rem; font-weight: 600; color: #f8fafc; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 10px; }
+.chart-body { flex: 1; width: 100%; display: flex; justify-content: center; align-items: center; position: relative; overflow: hidden;}
+.chart-spinner { position: absolute; color: #3b82f6; animation: spin 1s linear infinite; }
+@keyframes spin { 100% { transform: rotate(360deg); } }
+</style>
+
+<div class="dashboard-view">
+    <div class="header-actions">
+        <h1>Tổng Quan Hệ Thống</h1>
+        <button class="btn btn-primary" onclick="initDashboard()" id="btnRefreshDB">
+            <i data-feather="refresh-cw"></i> Làm mới
+        </button>
+    </div>
+    
+    <div class="kpi-grid">
+        <div class="kpi-card blue">
+            <div class="kpi-content">
+                <h3>Tổng Sản Phẩm</h3>
+                <p id="kpi-totalProducts">-</p>
             </div>
-
-            <ul class="nav-links">
-                <li class="nav-item"><a class="nav-link active" data-target="dashboard-tab"><i data-feather="grid"></i> Layout Chính</a></li>
-                <li class="nav-item"><a class="nav-link" data-target="products-tab"><i data-feather="package"></i> Sản Phẩm</a></li>
-                <li class="nav-item"><a class="nav-link" data-target="io-tab"><i data-feather="refresh-cw"></i> Nhập / Xuất kho</a></li>
-                <li class="nav-item"><a class="nav-link" data-target="alert-tab"><i data-feather="alert-triangle"></i> Cảnh báo tồn kho</a></li>
-                <li class="nav-item"><a class="nav-link" data-target="suppliers-tab"><i data-feather="truck"></i> Nhà cung cấp</a></li>
-                <li class="nav-item"><a class="nav-link" data-target="users-tab"><i data-feather="users"></i> Quản lý người dùng</a></li>
-            </ul>
-
-            <div class="sidebar-footer">
-                <div class="user-profile">
-                    <div class="avatar" id="userAvatar">A</div>
-                    <div class="user-info">
-                        <div class="name" id="userName">Admin</div>
-                        <div class="role" id="userRole">Admin</div>
-                    </div>
-                </div>
-                <button class="btn-logout" id="btnLogout">
-                    <i data-feather="log-out"></i> Đăng xuất
-                </button>
+            <div class="kpi-icon"><i data-feather="box"></i></div>
+        </div>
+        <div class="kpi-card green">
+            <div class="kpi-content">
+                <h3>Giao Dịch (Tháng này)</h3>
+                <p id="kpi-totalTrans">-</p>
             </div>
-        </aside>
-
-        <main class="main-content">
-            <header class="top-header">
-                <h2 class="page-title" id="pageTitle">Layout Chính</h2>
-            </header>
-
-            <div class="content-area">
-                <div class="tab-pane active" id="dashboard-tab"><div class="empty-state"><div class="empty-state-icon"><i data-feather="grid"></i></div><h3>Tổng quan</h3></div></div>
-                <div class="tab-pane" id="products-tab"><div class="empty-state"><div class="empty-state-icon"><i data-feather="package"></i></div><h3>Sản phẩm</h3></div></div>
-                <div class="tab-pane" id="io-tab"><div class="empty-state"><div class="empty-state-icon"><i data-feather="refresh-cw"></i></div><h3>Nhập/Xuất</h3></div></div>
-                <div class="tab-pane" id="alert-tab"><div class="empty-state"><div class="empty-state-icon"><i data-feather="alert-triangle"></i></div><h3>Cảnh báo</h3></div></div>
-                <div class="tab-pane" id="suppliers-tab"><div class="empty-state"><div class="empty-state-icon"><i data-feather="truck"></i></div><h3>Nhà Cung Cấp</h3></div></div>
-                <div class="tab-pane" id="users-tab"><div class="empty-state"><div class="empty-state-icon"><i data-feather="users"></i></div><h3>Quản lý User</h3></div></div>
+            <div class="kpi-icon"><i data-feather="activity"></i></div>
+        </div>
+        <div class="kpi-card red">
+            <div class="kpi-content">
+                <h3>Sắp Hết Hàng</h3>
+                <p id="kpi-lowStock">-</p>
             </div>
-        </main>
+            <div class="kpi-icon"><i data-feather="alert-triangle"></i></div>
+        </div>
+        <div class="kpi-card yellow">
+            <div class="kpi-content">
+                <h3>Tổng Giá Trị Tồn Kho</h3>
+                <p id="kpi-totalValue">-</p>
+            </div>
+            <div class="kpi-icon"><i data-feather="dollar-sign"></i></div>
+        </div>
     </div>
 
-    <script>
-      const APP_URL = "<?= getScriptUrl() ?>";
-    </script>
-    <?!= include('DashboardJS'); ?>
-</body>
-</html>
+    <div class="charts-grid">
+        <div class="chart-container">
+            <div class="chart-header">Tỷ Lệ Tồn Kho Theo Danh Mục</div>
+            <div class="chart-body" id="pieChartDiv">
+                <i data-feather="loader" class="chart-spinner"></i>
+            </div>
+        </div>
+        <div class="chart-container">
+            <div class="chart-header">Top 5 Sản Phẩm Tồn Kho Nhiều Nhất</div>
+            <div class="chart-body" id="barChartDiv">
+                <i data-feather="loader" class="chart-spinner"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<?!= include('DashboardJS'); ?>

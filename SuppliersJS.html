@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Auth Guard
     const user = JSON.parse(sessionStorage.getItem('warehouse_user') || '{}');
     if (user.role !== 'admin') {
-        alert("Bạn không có quyền truy cập trang này!");
+        Toast.fire({ icon: 'warning', title: "Bạn không có quyền truy cập trang này!" });
         window.location.href = APP_URL + "?page=Dashboard";
         return;
     }
@@ -47,9 +47,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 btnSave.classList.remove('loading');
                 if(res.success) {
                     modal.classList.remove('active');
+                    Toast.fire({ icon: 'success', title: "Lưu thành công!" });
                     loadSuppliers();
                 } else {
-                    alert("Lỗi hệ thống: " + res.message);
+                    Toast.fire({ icon: 'error', title: "Lỗi hệ thống: " + res.message });
                 }
             })
             .saveSupplier(formObj);
@@ -63,7 +64,7 @@ function loadSuppliers() {
                 globalSuppliersData = res.data;
                 renderTable(res.data);
             } else {
-                alert("Lỗi tải data: " + res.message);
+                Toast.fire({ icon: 'error', title: "Lỗi tải data: " + res.message });
             }
         })
         .getSuppliersData();
@@ -127,17 +128,28 @@ function openAddModal() {
 }
 
 function deleteMode(id) {
-    if(confirm(`Nghiệm trọng: Bạn có chắc chắn muốn xoá Nhà Cung Cấp [${id}] khỏi hệ thống?`)) {
-        google.script.run
-            .withSuccessHandler(function(res) {
-                if(res.success) {
-                    alert(res.message);
-                    loadSuppliers();
-                } else {
-                    alert("Lỗi Xóa: " + res.message);
-                }
-            })
-            .deleteSupplier(id);
-    }
+    Swal.fire({
+        title: 'Nghiêm trọng',
+        text: `Bạn có chắc chắn muốn xoá Nhà Cung Cấp [${id}] khỏi hệ thống?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Đồng ý Xóa',
+        cancelButtonText: 'Hủy'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            google.script.run
+                .withSuccessHandler(function(res) {
+                    if(res.success) {
+                        Toast.fire({ icon: 'success', title: res.message });
+                        loadSuppliers();
+                    } else {
+                        Toast.fire({ icon: 'error', title: "Lỗi Xóa: " + res.message });
+                    }
+                })
+                .deleteSupplier(id);
+        }
+    });
 }
 </script>

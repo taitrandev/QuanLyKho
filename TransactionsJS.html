@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (type === 'Xuất') {
              const prod = globalTxnProducts.find(p => p.Product_ID === pid);
              if (prod && qty > prod.Current_Stock) {
-                 alert(`Lỗi: Tồn kho chỉ còn ${prod.Current_Stock}. Không thể xuất ${qty}!`);
+                 Toast.fire({ icon: 'error', title: `Lỗi: Tồn kho chỉ còn ${prod.Current_Stock}. Không thể xuất ${qty}!` });
                  return;
              }
         }
@@ -60,7 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .withSuccessHandler(function(res) {
                 btnSave.classList.remove('loading');
                 if(res.success) {
-                    alert(res.message);
+                    Toast.fire({ icon: 'success', title: res.message });
                     document.getElementById('txnForm').reset();
                     // Đặt lại trang thái
                     selectType('Nhập');
@@ -70,7 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     loadFormData();
                     loadTransactions();
                 } else {
-                    alert("Lỗi: " + res.message);
+                    Toast.fire({ icon: 'error', title: "Lỗi: " + res.message });
                 }
             })
             .saveTransaction(formObj);
@@ -121,7 +121,7 @@ function loadFormData() {
                 sSelect.removeAttribute('disabled');
 
             } else {
-                alert("Lỗi tải Dropdown: " + res.message);
+                Toast.fire({ icon: 'error', title: "Lỗi tải Dropdown: " + res.message });
             }
         })
         .getTxnFormData();

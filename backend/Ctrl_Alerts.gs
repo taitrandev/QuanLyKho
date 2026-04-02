@@ -31,6 +31,8 @@ function getLowStockProducts() {
            lowStockList.push({
                Product_ID: p.Product_ID,
                Product_Name: p.Product_Name,
+               Category: p.Category || 'Chưa phân loại',
+               Unit: p.Unit || 'Cái',
                Current_Stock: stock,
                Min_Stock: minStock,
                Supplier_Name: sup ? sup.Supplier_Name : p.Supplier_ID,
@@ -75,42 +77,31 @@ function triggerAlertEmail() {
       
       if (emailList.length === 0) return { success: false, message: "Không có Email nào đang ở trạng thái Hoạt Động!" };
       
-      // 3. Render HTML Body
-      let tableRows = '';
+      // 3. Render HTML Body cho nhiều sản phẩm
+      let productBlocks = '';
       list.forEach(p => {
-          tableRows += `
-            <tr>
-              <td style="padding: 10px; border: 1px solid #ddd;"><strong>${p.Product_ID}</strong></td>
-              <td style="padding: 10px; border: 1px solid #ddd;">${p.Product_Name}</td>
-              <td style="padding: 10px; border: 1px solid #ddd; color: red; font-weight: bold;">${p.Current_Stock}</td>
-              <td style="padding: 10px; border: 1px solid #ddd;">${p.Min_Stock}</td>
-              <td style="padding: 10px; border: 1px solid #ddd;">${p.Supplier_Name} (${p.Supplier_Phone})</td>
-            </tr>
+          productBlocks += `
+            <div style="margin-bottom: 20px;">
+              Sản phẩm: ${p.Product_Name} (Mã: ${p.Product_ID})<br>
+              Danh mục: ${p.Category}<br>
+              Tồn kho hiện tại: <span style="color: #ef4444; font-weight: bold;">${p.Current_Stock}</span> [${p.Unit}]<br>
+              Mức tối thiểu: ${p.Min_Stock} [${p.Unit}]<br>
+              Nhà cung cấp: ${p.Supplier_Name} - SĐT: ${p.Supplier_Phone}<br>
+            </div>
           `;
       });
       
       const htmlBody = `
-        <div style="font-family: Arial, sans-serif; padding: 20px; line-height: 1.6;">
-          <h2 style="color: #ef4444;">🚨 Cảnh báo Tồn Kho Dưới Định Mức</h2>
-          <p>Kính gửi bộ phận Mua hàng,</p>
-          <p>Hệ thống ghi nhận có <strong>${list.length}</strong> sản phẩm đã chạm mức tồn kho tối thiểu. Vui lòng liên hệ Nhà Cung Cấp để tiến hành nhập hàng nhằm đảm bảo sản xuất.</p>
-          
-          <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
-            <thead style="background-color: #f3f4f6;">
-              <tr>
-                <th style="padding: 10px; border: 1px solid #ddd;">Mã SP</th>
-                <th style="padding: 10px; border: 1px solid #ddd;">Tên Sản Phẩm</th>
-                <th style="padding: 10px; border: 1px solid #ddd;">Tồn Thực Tế</th>
-                <th style="padding: 10px; border: 1px solid #ddd;">Định Mức (Min)</th>
-                <th style="padding: 10px; border: 1px solid #ddd;">Nhà Cung Cấp</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${tableRows}
-            </tbody>
-          </table>
+        <div style="background-color: #1e1e1e; color: #e5e5e5; font-family: 'Courier New', Courier, monospace; padding: 20px; border-radius: 8px; width: fit-content; min-width: 400px;">
+          <h2 style="color: #fbbf24; margin-top: 0; font-size: 18px;">⚠️ CẢNH BÁO TỒN KHO THẤP</h2>
           <br>
-          <p><em>Email được tạo tự động từ phần mềm Quản Lý Kho. Vui lòng không trả lời.</em></p>
+          <div style="line-height: 1.6; font-size: 14px;">
+            ${productBlocks}
+            Vui lòng liên hệ nhà cung cấp để đặt hàng bổ sung!
+            <br><br>
+            ---<br>
+            Hệ thống Quản lý Kho – Thông báo tự động
+          </div>
         </div>
       `;
       
@@ -128,5 +119,67 @@ function triggerAlertEmail() {
       
    } catch(err) {
       return { success: false, message: err.toString() };
+   }
+}
+
+// 5. Hàm bắn email ngay khi xuất kho
+function checkAndNotifyLowStock(productId) {
+    const alertData = getLowStockProducts();
+    if (alertData.success) {
+        const prod = alertData.data.find(p => p.Product_ID === productId);
+        if (prod) {
+            triggerSingleAlertEmail(prod);
+        }
+    }
+}
+
+function triggerSingleAlertEmail(p) {
+   try {
+      const sheetRecipients = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("AlertRecipients");
+      if(!sheetRecipients) return;
+      
+      const recData = sheetRecipients.getDataRange().getValues();
+      if (recData.length < 2) return;
+      const rows = recData.slice(1);
+      
+      let emailList = [];
+      rows.forEach(r => {
+         let email = r[0];
+         let active = r[2];
+         if ((active === true || active === 'TRUE' || active === true) && email) {
+             emailList.push(email);
+         }
+      });
+      if (emailList.length === 0) return;
+
+      const htmlBody = `
+        <div style="background-color: #1e1e1e; color: #e5e5e5; font-family: 'Courier New', Courier, monospace; padding: 20px; border-radius: 8px; width: fit-content; min-width: 400px;">
+          <h2 style="color: #fbbf24; margin-top: 0; font-size: 18px;">⚠️ CẢNH BÁO TỒN KHO THẤP</h2>
+          <br>
+          <div style="line-height: 1.6; font-size: 14px;">
+            Sản phẩm: ${p.Product_Name} (Mã: ${p.Product_ID})<br>
+            Danh mục: ${p.Category}<br>
+            Tồn kho hiện tại: <span style="color: #ef4444; font-weight: bold;">${p.Current_Stock}</span> [${p.Unit}]<br>
+            Mức tối thiểu: ${p.Min_Stock} [${p.Unit}]<br>
+            Nhà cung cấp: ${p.Supplier_Name} - SĐT: ${p.Supplier_Phone}<br>
+            <br>
+            Vui lòng liên hệ nhà cung cấp để đặt hàng bổ sung!
+            <br><br>
+            ---<br>
+            Hệ thống Quản lý Kho – Thông báo tự động
+          </div>
+        </div>
+      `;
+
+      const toEmails = emailList.join(',');
+      const timeStr = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "dd/MM/yyyy HH:mm");
+      MailApp.sendEmail({
+         to: toEmails,
+         subject: "⚠️ CẢNH BÁO: Tồn kho thấp - " + p.Product_ID,
+         htmlBody: htmlBody
+      });
+      
+   } catch(err) {
+      console.error("Auto Alert Error: ", err);
    }
 }

@@ -1,51 +1,119 @@
 <script>
+// Load Google Charts
+let chartsLoaded = false;
+let dashboardData = null;
+
+google.charts.load('current', {'packages':['corechart']});
+google.charts.setOnLoadCallback(() => {
+    chartsLoaded = true;
+    tryRenderCharts();
+});
+
 document.addEventListener('DOMContentLoaded', () => {
+    initDashboard();
+});
+
+function initDashboard() {
+    let btnRefresh = document.getElementById('btnRefreshDB');
+    if(btnRefresh) {
+        btnRefresh.classList.add('loading');
+    }
+    
+    // reset UI
+    document.getElementById('kpi-totalProducts').innerText = '-';
+    document.getElementById('kpi-totalTrans').innerText = '-';
+    document.getElementById('kpi-lowStock').innerText = '-';
+    document.getElementById('kpi-totalValue').innerText = '-';
+    
+    document.getElementById('pieChartDiv').innerHTML = '<i data-feather="loader" class="chart-spinner"></i>';
+    document.getElementById('barChartDiv').innerHTML = '<i data-feather="loader" class="chart-spinner"></i>';
     feather.replace();
 
-    const sessionStr = sessionStorage.getItem('warehouse_user');
-    if (!sessionStr) {
-        if (APP_URL) window.top.location.href = APP_URL + "?page=index";
+    google.script.run
+        .withSuccessHandler(function(res) {
+            if(btnRefresh) btnRefresh.classList.remove('loading');
+            if (res.success) {
+                renderKPIs(res.stats);
+                dashboardData = res;
+                tryRenderCharts();
+            } else {
+                Toast.fire({ icon: 'error', title: "Lỗi tải Dashboard: " + res.message });
+                document.getElementById('pieChartDiv').innerHTML = '<span>Lỗi dữ liệu</span>';
+                document.getElementById('barChartDiv').innerHTML = '<span>Lỗi dữ liệu</span>';
+            }
+        })
+        .getDashboardStats();
+}
+
+function tryRenderCharts() {
+    if (chartsLoaded && dashboardData) {
+        drawPieChart(dashboardData.pieChartData);
+        drawBarChart(dashboardData.barChartData);
+    }
+}
+
+function renderKPIs(stats) {
+    document.getElementById('kpi-totalProducts').innerText = (stats.totalProducts || 0).toLocaleString('vi-VN');
+    document.getElementById('kpi-totalTrans').innerText = (stats.totalTransactionsThisMonth || 0).toLocaleString('vi-VN');
+    document.getElementById('kpi-lowStock').innerText = (stats.lowStockCount || 0).toLocaleString('vi-VN');
+    document.getElementById('kpi-totalValue').innerText = (stats.totalValue || 0).toLocaleString('vi-VN') + " đ";
+}
+
+function drawPieChart(dataArray) {
+    if(!dataArray || dataArray.length <= 1) {
+        document.getElementById('pieChartDiv').innerHTML = '<span style="color: #94a3b8;">Chưa có dữ liệu</span>';
         return;
     }
+    
+    var data = google.visualization.arrayToDataTable(dataArray);
 
-    document.getElementById('dashboardLayout').style.display = 'flex';
+    var options = {
+      backgroundColor: 'transparent',
+      legend: { textStyle: { color: '#f8fafc' }, position: 'right' },
+      pieHole: 0.4,
+      chartArea: { width: '90%', height: '90%' },
+      colors: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6']
+    };
 
-    try {
-        const user = JSON.parse(sessionStr);
-        document.getElementById('userName').textContent = user.name || 'Người dùng';
-        document.getElementById('userRole').textContent = user.role || 'Staff';
-        if (user.name) {
-            document.getElementById('userAvatar').textContent = user.name.charAt(0).toUpperCase();
-        }
-    } catch (e) {
-        console.error("Lỗi parse data user", e);
+    var chart = new google.visualization.PieChart(document.getElementById('pieChartDiv'));
+    chart.draw(data, options);
+}
+
+function drawBarChart(dataArray) {
+    if(!dataArray || dataArray.length <= 1) {
+        document.getElementById('barChartDiv').innerHTML = '<span style="color: #94a3b8;">Chưa có dữ liệu tồn kho</span>';
+        return;
     }
+    
+    var data = google.visualization.arrayToDataTable(dataArray);
 
-    // Tabs logic
-    const navLinks = document.querySelectorAll('.nav-link');
-    const tabPanes = document.querySelectorAll('.tab-pane');
-    const pageTitle = document.getElementById('pageTitle');
+    var options = {
+      backgroundColor: 'transparent',
+      legend: { position: 'none' },
+      chartArea: { width: '60%', height: '80%' },
+      hAxis: {
+        textStyle: { color: '#94a3b8' },
+        gridlines: { color: 'rgba(255,255,255,0.1)' },
+        baselineColor: '#94a3b8'
+      },
+      vAxis: {
+        textStyle: { color: '#f8fafc' }
+      },
+      colors: ['#3b82f6'] // Primary blue for bar chart
+    };
 
-    navLinks.forEach(link => {
-        link.addEventListener('click', (e) => {
-            e.preventDefault();
-            navLinks.forEach(l => l.classList.remove('active'));
-            tabPanes.forEach(p => p.classList.remove('active'));
+    var chart = new google.visualization.BarChart(document.getElementById('barChartDiv'));
+    chart.draw(data, options);
+}
 
-            link.classList.add('active');
-            const targetId = link.getAttribute('data-target');
-            document.getElementById(targetId).classList.add('active');
-            pageTitle.textContent = link.textContent.trim();
-        });
-    });
-
-    // Logout logic
-    const btnLogout = document.getElementById('btnLogout');
-    if (btnLogout) {
-        btnLogout.addEventListener('click', () => {
-            sessionStorage.removeItem('warehouse_user');
-            window.top.location.href = APP_URL + "?page=index";
-        });
-    }
+// Window resize handler for responsive charts without refetching from server
+let resizeTimer;
+window.addEventListener('resize', function() {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+        // Simple re-run will fetch from server again to redraw. 
+        // A better approach is caching res data, but this is simple and robust.
+        initDashboard(); 
+    }, 250);
 });
 </script>

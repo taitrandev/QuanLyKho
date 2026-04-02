@@ -3,19 +3,26 @@ document.addEventListener('DOMContentLoaded', () => {
     loadAlerts();
 
     document.getElementById('btnSendAlert').addEventListener('click', function() {
-        if(!confirm("Hệ thống sẽ gửi email báo cáo tình trạng thiếu hàng đến Ban Giám Đốc và Bộ Phận Mua Hàng. Tiếp tục?")) {
-            return;
-        }
-        
         const btn = this;
-        btn.classList.add('loading');
-        
-        google.script.run
-            .withSuccessHandler(function(res) {
-                btn.classList.remove('loading');
-                alert(res.message);
-            })
-            .triggerAlertEmail();
+        Swal.fire({
+            title: 'Xác nhận',
+            text: 'Hệ thống sẽ gửi email báo cáo tình trạng thiếu hàng đến Ban Giám Đốc và Bộ Phận Mua Hàng. Tiếp tục?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Đồng ý',
+            cancelButtonText: 'Hủy'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                btn.classList.add('loading');
+                google.script.run
+                    .withSuccessHandler(function(res) {
+                        btn.classList.remove('loading');
+                        if(res.success) Toast.fire({ icon: 'success', title: res.message });
+                        else Toast.fire({ icon: 'error', title: res.message });
+                    })
+                    .triggerAlertEmail();
+            }
+        });
     });
 });
 
@@ -25,7 +32,7 @@ function loadAlerts() {
             if(res.success) {
                 renderAlertsTable(res.data);
             } else {
-                alert("Lỗi tải cảnh báo: " + res.message);
+                Toast.fire({ icon: 'error', title: "Lỗi tải cảnh báo: " + res.message });
             }
         })
         .getLowStockProducts();
