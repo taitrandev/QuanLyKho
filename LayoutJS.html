@@ -17,6 +17,13 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('userName').textContent = user.name || 'Người dùng';
         document.getElementById('userRole').textContent = user.role || 'Staff';
         if (user.name) document.getElementById('userAvatar').textContent = user.name.charAt(0).toUpperCase();
+
+        // Ẩn menu Admin nếu không phải admin
+        if (user.role !== 'admin') {
+            document.querySelectorAll('li[data-req-admin="true"]').forEach(el => {
+                el.style.display = 'none';
+            });
+        }
     } catch (e) { console.error(e); }
 
     const navLinks = document.querySelectorAll('.layout-nav');

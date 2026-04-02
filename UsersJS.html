@@ -1,0 +1,175 @@
+<script>
+let globalUsersData = [];
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Auth Guard
+    const sessionStr = sessionStorage.getItem('warehouse_user');
+    const user = JSON.parse(sessionStr || '{}');
+    if (user.role !== 'admin') {
+        alert("Khu vực này chỉ dành cho Quản Trị Viên!");
+        window.location.href = APP_URL + "?page=Dashboard";
+        return;
+    }
+
+    loadUsers();
+
+    document.getElementById('searchInput').addEventListener('keyup', function(e) {
+        const val = this.value.toLowerCase();
+        const rows = document.querySelectorAll('#usersBody tr.data-row');
+        rows.forEach(r => {
+            const text = r.textContent.toLowerCase();
+            r.style.display = text.includes(val) ? '' : 'none';
+        });
+    });
+
+    const modal = document.getElementById('userModal');
+    
+    document.getElementById('btnAddNew').addEventListener('click', openAddModal);
+    document.getElementById('btnCloseModal').addEventListener('click', () => modal.classList.remove('active'));
+
+    document.getElementById('userForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const btnSave = document.getElementById('btnSaveUser');
+        btnSave.classList.add('loading');
+        
+        const formObj = {
+            rowIndex: document.getElementById('rowIndex').value,
+            userId: document.getElementById('userId').value,
+            email: document.getElementById('email').value,
+            fullName: document.getElementById('fullName').value,
+            role: document.getElementById('role').value,
+            password: document.getElementById('password').value
+        };
+
+        // If editing, wait -> if password blank, backend handles keeping old.
+        // But if creating new, password is required.
+        if (!formObj.rowIndex && !formObj.password) {
+            alert("Vui lòng khởi tạo mật khẩu cho tài khoản mới!");
+            btnSave.classList.remove('loading');
+            return;
+        }
+
+        google.script.run
+            .withSuccessHandler(function(res) {
+                btnSave.classList.remove('loading');
+                if(res.success) {
+                    modal.classList.remove('active');
+                    loadUsers();
+                } else {
+                    alert("Lỗi hệ thống: " + res.message);
+                }
+            })
+            .saveUser(formObj);
+    });
+});
+
+function loadUsers() {
+    google.script.run
+        .withSuccessHandler(function(res) {
+            if (res.success) {
+                globalUsersData = res.data;
+                renderTable(res.data);
+            } else {
+                alert("Lỗi tải data: " + res.message);
+            }
+        })
+        .getUsersData();
+}
+
+function renderTable(data) {
+    const tbody = document.getElementById('usersBody');
+    if (data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;">Chưa có dữ liệu Người dùng</td></tr>`;
+        feather.replace();
+        return;
+    }
+
+    let html = '';
+    data.forEach(item => {
+        // Active status
+        let isAct = (item.Active === true || item.Active === 'TRUE' || item.Active === true);
+        let statusHtml = isAct 
+            ? `<span class="chip chip-success"><span class="dot"></span> Hoạt động</span>` 
+            : `<span class="chip chip-danger"><span class="dot"></span> Vô hiệu hóa</span>`;
+            
+        let toggleIcon = isAct ? 'lock' : 'unlock';
+        let toggleTitle = isAct ? 'Vô hiệu hóa quyền Đăng Nhập' : 'Mở khoá quyền Đăng Nhập';
+        let toggleClass = isAct ? 'text-danger' : 'text-success';
+
+        html += `
+        <tr class="data-row">
+            <td class="fw-bold">${item.User_ID}</td>
+            <td>${item.Full_Name}</td>
+            <td>${item.Email}</td>
+            <td><code>${item.Role}</code></td>
+            <td style="text-align: center;">${statusHtml}</td>
+            <td style="text-align: center;">
+                <button class="action-btn text-accent" onclick="editMode('${item.User_ID}')" title="Sửa Role/Name"><i data-feather="edit-2"></i></button>
+                <button class="action-btn ${toggleClass}" onclick="toggleStatus('${item.User_ID}', ${!isAct})" title="${toggleTitle}"><i data-feather="${toggleIcon}"></i></button>
+            </td>
+        </tr>`;
+    });
+    
+    tbody.innerHTML = html;
+    feather.replace();
+}
+
+function editMode(id) {
+    const item = globalUsersData.find(u => u.User_ID === id);
+    if (!item) return;
+
+    document.getElementById('modalTitle').innerText = 'Chỉnh Sửa Quyền';
+    document.getElementById('userForm').reset();
+    
+    document.getElementById('rowIndex').value = item._rowIndex;
+    
+    const uIdInput = document.getElementById('userId');
+    uIdInput.value = item.User_ID;
+    uIdInput.setAttribute('readonly', 'readonly');
+    
+    const emailInput = document.getElementById('email');
+    emailInput.value = item.Email;
+    // Tùy theo logic auth, tốt nhất không nên cho đổi Email đăng nhập, hoặc cho phép nhưng cảnh báo. Tôi cứ khoá lại cho an toàn.
+    emailInput.setAttribute('readonly', 'readonly');
+    
+    document.getElementById('fullName').value = item.Full_Name;
+    document.getElementById('role').value = item.Role;
+    
+    const pwInput = document.getElementById('password');
+    pwInput.value = ''; // Blank to keep original
+    pwInput.removeAttribute('required');
+    document.getElementById('pwHint').innerText = "Để trống nếu Không Muốn Đổi mật khẩu";
+
+    document.getElementById('userModal').classList.add('active');
+}
+
+function openAddModal() {
+    document.getElementById('modalTitle').innerText = 'Tạo Người Dùng Mới';
+    document.getElementById('userForm').reset();
+    document.getElementById('rowIndex').value = '';
+    
+    document.getElementById('userId').removeAttribute('readonly');
+    document.getElementById('email').removeAttribute('readonly');
+    
+    document.getElementById('password').setAttribute('required', 'required');
+    document.getElementById('pwHint').innerText = "Tạo mật khẩu để người dùng đăng nhập";
+
+    document.getElementById('userModal').classList.add('active');
+}
+
+function toggleStatus(id, turnOnFlag) {
+    const action = turnOnFlag ? "MỞ KHOÁ" : "VÔ HIỆU HÓA";
+    if(confirm(`Bạn có chắc chắn muốn ${action} tài khoản mã [${id}] không?`)) {
+        google.script.run
+            .withSuccessHandler(function(res) {
+                if(res.success) {
+                    loadUsers();
+                } else {
+                    alert("Lỗi Update: " + res.message);
+                }
+            })
+            .toggleUserStatus(id, turnOnFlag);
+    }
+}
+</script>

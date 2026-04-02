@@ -1,0 +1,92 @@
+<div class="module-header">
+    <div class="module-actions">
+        <div class="search-box">
+            <i data-feather="search"></i>
+            <input type="text" id="searchInput" placeholder="Tìm tên nhà cung cấp..." class="form-control" style="width: 250px;">
+        </div>
+        <button class="btn-primary" id="btnAddNew" style="width: auto;">
+            <i data-feather="plus"></i> Thêm Nhà Cung Cấp
+        </button>
+    </div>
+</div>
+
+<div class="table-card">
+    <table class="data-table" id="suppliersTable">
+        <thead>
+            <tr>
+                <th>Mã NCC</th>
+                <th>Tên Nhà Cung Cấp</th>
+                <th>Số Điện Thoại</th>
+                <th>Email</th>
+                <th>Địa chỉ</th>
+                <th style="text-align: center;">Hành động</th>
+            </tr>
+        </thead>
+        <tbody id="suppliersBody">
+            <tr>
+                <td colspan="6" style="text-align: center; padding: 40px;">
+                    <div class="spinner" style="display:inline-block; border-top-color: var(--accent-primary);"></div>
+                    <p style="margin-top: 10px; color: var(--text-secondary)">Đang tải dữ liệu...</p>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal Form -->
+<div class="modal" id="supplierModal">
+    <div class="modal-dialog">
+        <div class="modal-header">
+            <h3 id="modalTitle">Thêm Nhà Cung Cấp</h3>
+            <button class="icon-btn" id="btnCloseModal"><i data-feather="x"></i></button>
+        </div>
+        <div class="modal-body">
+            <form id="supplierForm">
+                <input type="hidden" id="rowIndex">
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Mã NCC *</label>
+                        <input type="text" id="supplierId" class="form-control" required placeholder="VD: NCC001">
+                    </div>
+                    <div class="form-group" style="flex: 2;">
+                        <label class="form-label">Tên Nhà Cung Cấp *</label>
+                        <input type="text" id="supplierName" class="form-control" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Người Liên Hệ</label>
+                        <input type="text" id="contactPerson" class="form-control" placeholder="VD: Anh A">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Số Điện Thoại</label>
+                        <input type="text" id="phone" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" id="email" class="form-control">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Địa chỉ</label>
+                    <input type="text" id="address" class="form-control">
+                </div>
+
+                <div class="form-group">
+                    <button type="submit" class="btn-primary" id="btnSaveSupplier">
+                        <span class="text">Lưu Thông Tin</span>
+                        <div class="spinner"></div>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<?!= include('SuppliersJS'); ?>

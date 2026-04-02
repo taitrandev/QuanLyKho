@@ -1,0 +1,143 @@
+<script>
+let globalSuppliersData = [];
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Auth Guard
+    const user = JSON.parse(sessionStorage.getItem('warehouse_user') || '{}');
+    if (user.role !== 'admin') {
+        alert("Bạn không có quyền truy cập trang này!");
+        window.location.href = APP_URL + "?page=Dashboard";
+        return;
+    }
+
+    loadSuppliers();
+
+    document.getElementById('searchInput').addEventListener('keyup', function(e) {
+        const val = this.value.toLowerCase();
+        const rows = document.querySelectorAll('#suppliersBody tr.data-row');
+        rows.forEach(r => {
+            const text = r.textContent.toLowerCase();
+            r.style.display = text.includes(val) ? '' : 'none';
+        });
+    });
+
+    const modal = document.getElementById('supplierModal');
+    
+    document.getElementById('btnAddNew').addEventListener('click', openAddModal);
+    document.getElementById('btnCloseModal').addEventListener('click', () => modal.classList.remove('active'));
+
+    document.getElementById('supplierForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const btnSave = document.getElementById('btnSaveSupplier');
+        btnSave.classList.add('loading');
+        
+        const formObj = {
+            rowIndex: document.getElementById('rowIndex').value,
+            supplierId: document.getElementById('supplierId').value,
+            supplierName: document.getElementById('supplierName').value,
+            contactPerson: document.getElementById('contactPerson').value,
+            phone: document.getElementById('phone').value,
+            email: document.getElementById('email').value,
+            address: document.getElementById('address').value
+        };
+
+        google.script.run
+            .withSuccessHandler(function(res) {
+                btnSave.classList.remove('loading');
+                if(res.success) {
+                    modal.classList.remove('active');
+                    loadSuppliers();
+                } else {
+                    alert("Lỗi hệ thống: " + res.message);
+                }
+            })
+            .saveSupplier(formObj);
+    });
+});
+
+function loadSuppliers() {
+    google.script.run
+        .withSuccessHandler(function(res) {
+            if (res.success) {
+                globalSuppliersData = res.data;
+                renderTable(res.data);
+            } else {
+                alert("Lỗi tải data: " + res.message);
+            }
+        })
+        .getSuppliersData();
+}
+
+function renderTable(data) {
+    const tbody = document.getElementById('suppliersBody');
+    if (data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;">Chưa có dữ liệu Nhà Cung Cấp</td></tr>`;
+        feather.replace();
+        return;
+    }
+
+    let html = '';
+    data.forEach(item => {
+        html += `
+        <tr class="data-row">
+            <td class="fw-bold">${item.Supplier_ID}</td>
+            <td>${item.Supplier_Name}</td>
+            <td>${item.Contact_Phone || item.Phone || '-'}</td>
+            <td>${item.Email || '-'}</td>
+            <td>${item.Address || '-'}</td>
+            <td style="text-align: center;">
+                <button class="action-btn text-accent" onclick="editMode('${item.Supplier_ID}')" title="Sửa"><i data-feather="edit-2"></i></button>
+                <button class="action-btn text-danger" onclick="deleteMode('${item.Supplier_ID}')" title="Xóa"><i data-feather="trash-2"></i></button>
+            </td>
+        </tr>`;
+    });
+    
+    tbody.innerHTML = html;
+    feather.replace();
+}
+
+function editMode(id) {
+    const item = globalSuppliersData.find(s => s.Supplier_ID === id);
+    if (!item) return;
+
+    document.getElementById('modalTitle').innerText = 'Chỉnh Sửa Nhà Cung Cấp';
+    document.getElementById('productForm')?.reset(); // optional
+    
+    document.getElementById('rowIndex').value = item._rowIndex;
+    const sIdInput = document.getElementById('supplierId');
+    sIdInput.value = item.Supplier_ID;
+    sIdInput.setAttribute('readonly', 'readonly');
+    
+    document.getElementById('supplierName').value = item.Supplier_Name || '';
+    document.getElementById('contactPerson').value = item.Contact_Person || '';
+    document.getElementById('phone').value = item.Contact_Phone || item.Phone || '';
+    document.getElementById('email').value = item.Email || '';
+    document.getElementById('address').value = item.Address || '';
+
+    document.getElementById('supplierModal').classList.add('active');
+}
+
+function openAddModal() {
+    document.getElementById('modalTitle').innerText = 'Thêm Nhà Cung Cấp';
+    document.getElementById('supplierForm').reset();
+    document.getElementById('rowIndex').value = '';
+    document.getElementById('supplierId').removeAttribute('readonly');
+    document.getElementById('supplierModal').classList.add('active');
+}
+
+function deleteMode(id) {
+    if(confirm(`Nghiệm trọng: Bạn có chắc chắn muốn xoá Nhà Cung Cấp [${id}] khỏi hệ thống?`)) {
+        google.script.run
+            .withSuccessHandler(function(res) {
+                if(res.success) {
+                    alert(res.message);
+                    loadSuppliers();
+                } else {
+                    alert("Lỗi Xóa: " + res.message);
+                }
+            })
+            .deleteSupplier(id);
+    }
+}
+</script>
