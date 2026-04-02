@@ -1,98 +1,108 @@
 /**
- * Hàm hỗ trợ nhúng nội dung file HTML con vào file HTML chính
+ * Hàm hỗ trợ nhúng HTML con vào HTML chính
  */
 function include(filename) {
-  return HtmlService.createHtmlOutputFromFile(filename).getContent();
+  return HtmlService.createTemplateFromFile(filename).evaluate().getContent();
 }
 
 /**
- * Hàm điều hướng hiển thị trang dựa theo tham số URL (?page=...)
+ * Điều hướng trang qua ?page=...
+ * Sử dụng Layout.html làm Master Page
  */
 function doGet(e) {
   let page = e.parameter.page;
-  if (!page) {
-    page = 'Index'; // Trang mặc định là Đăng nhập
-  } else {
-    // Chữ cái đầu viết hoa cho đúng tên file: vd ?page=dashboard -> Dashboard
-    page = page.charAt(0).toUpperCase() + page.slice(1);
+  
+  // Nếu là trang Index (Login) hoặc không có truyền tham số -> trả về Index
+  if (!page || page.toLowerCase() === 'index') {
+    let output = HtmlService.createTemplateFromFile('Index').evaluate();
+    output.setTitle('Đăng nhập - Quản Lý Kho');
+    output.setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+    output.addMetaTag('viewport', 'width=device-width, initial-scale=1');
+    return output;
   }
 
-  // Khởi tạo template để có thể render các thẻ <?!= include('...') ?>
+  // Chuẩn hóa tên trang bắt đầu bằng chữ hoa
+  page = page.charAt(0).toUpperCase() + page.slice(1);
+  
+  // Nếu không phải trang Index, nhúng nó vào trong Layout
   try {
-    let template = HtmlService.createTemplateFromFile(page);
+    let template = HtmlService.createTemplateFromFile('Layout');
+    // Truyền biến contentPage xuống cho Layout render đoạn lõi
+    template.contentPage = page;
     let output = template.evaluate();
-    output.setTitle('Kho Hệ Sinh Thái');
+    output.setTitle('Hệ Sinh Thái Kho');
     output.setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
-    // Thêm thẻ meta viewport để Responsive
     output.addMetaTag('viewport', 'width=device-width, initial-scale=1');
     return output;
   } catch (error) {
-    // Return to index if page not found
-    return HtmlService.createTemplateFromFile('Index').evaluate().setTitle('Kho Hệ Sinh Thái');
+    // Fallback khi page bị khai báo lỗi không có file
+    let errorTemplate = HtmlService.createTemplateFromFile('Layout');
+    errorTemplate.contentPage = 'NotFound'; // Xử lý nếu cần
+    return errorTemplate.evaluate();
   }
 }
 
-/**
- * Hàm hỗ trợ lấy web app url
- */
 function getScriptUrl() {
   return ScriptApp.getService().getUrl();
 }
 
 /**
- * Thực thi Server Script để kiểm tra Đăng Nhập
- * Được gọi trực tiếp từ client qua google.script.run.login(...)
+ * Hàm lấy cấu trúc dữ liệu 1 Sheet biến thành Array Objects dễ đọc
+ */
+function getSheetDataAsObjects(sheetName) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
+  if (!sheet) return [];
+  
+  const data = sheet.getDataRange().getValues();
+  if (data.length <= 1) return []; // Empty or only header
+
+  const headers = data[0];
+  const objects = [];
+
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+    let obj = {};
+    for (let j = 0; j < headers.length; j++) {
+      obj[headers[j]] = row[j];
+    }
+    obj['_rowIndex'] = i + 1; // Giữ lại rowIndex phòng khi cần Cập nhật/Xoá
+    objects.push(obj);
+  }
+  return objects;
+}
+
+
+
+/**
+ * Đăng nhập Backend API
  */
 function login(email, password) {
   try {
-    const sheetId = SpreadsheetApp.getActiveSpreadsheet().getId();
     const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Users");
-    
-    if (!sheet) {
-       return { success: false, message: "Không tìm thấy Sheet 'Users' trong bảng tính này." };
-    }
+    if (!sheet) return { success: false, message: "Không tìm thấy Sheet Users." };
 
     const values = sheet.getDataRange().getValues();
     const headers = values[0];
-    
     const emailIndex = headers.indexOf("Email");
     const passwordIndex = headers.indexOf("Password");
     const activeIndex = headers.indexOf("Active");
     const roleIndex = headers.indexOf("Role");
     const nameIndex = headers.indexOf("Full_Name");
 
-    if (emailIndex === -1 || passwordIndex === -1) {
-       return { success: false, message: "Cấu trúc cột không hợp lệ. Không tìm thấy cột Email hoặc Password." };
-    }
-
     for (let i = 1; i < values.length; i++) {
         const row = values[i];
-        if (row[emailIndex] === email) {
-            if (row[passwordIndex].toString() === password.toString()) {
-                const isActive = row[activeIndex] === true || row[activeIndex] === "TRUE" || row[activeIndex] === "true" || row[activeIndex] === 1;
-                
-                if (!isActive) {
-                    return { success: false, message: "Tài khoản đang bị khóa. Hãy liên hệ Quản trị viên." };
-                }
+        if (row[emailIndex] === email && row[passwordIndex].toString() === password.toString()) {
+            const isActive = row[activeIndex] === true || row[activeIndex] === "TRUE";
+            if (!isActive) return { success: false, message: "Tài khoản bị khóa." };
 
-                // Thành công
-                return { 
-                    success: true, 
-                    message: "Đăng nhập thành công",
-                    user: {
-                        name: row[nameIndex],
-                        email: row[emailIndex],
-                        role: row[roleIndex]
-                    }
-                };
-            } else {
-               return { success: false, message: "Mật khẩu không chính xác." };
-            }
+            return { 
+                success: true, 
+                user: { name: row[nameIndex], email: row[emailIndex], role: row[roleIndex] }
+            };
         }
     }
-
-    return { success: false, message: "Không tìm thấy Email này." };
+    return { success: false, message: "Sai Email hoặc Mật khẩu." };
   } catch (error) {
-    return { success: false, message: "Lỗi hệ thống: " + error.toString() };
+    return { success: false, message: "Lỗi Server: " + error.toString() };
   }
 }

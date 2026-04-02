@@ -1,0 +1,179 @@
+<script>
+let globalProductsData = [];
+
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Fetch Dữ liệu Bảng Sản Phẩm
+    loadProducts();
+
+    // 2. Fetch Options cho Modal (Danh mục, Nhà CC)
+    loadFormData();
+
+    // 3. Search Filter
+    document.getElementById('searchInput').addEventListener('keyup', function(e) {
+        const val = this.value.toLowerCase();
+        const rows = document.querySelectorAll('#productsBody tr.data-row');
+        rows.forEach(r => {
+            const text = r.textContent.toLowerCase();
+            r.style.display = text.includes(val) ? '' : 'none';
+        });
+    });
+
+    // 4. Modal Triggers
+    const modal = document.getElementById('productModal');
+    
+    document.getElementById('btnAddNew').addEventListener('click', openAddModal);
+
+    document.getElementById('btnCloseModal').addEventListener('click', () => {
+        modal.classList.remove('active');
+    });
+
+    // 5. Submit Form Logic
+    document.getElementById('productForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const btnSave = document.getElementById('btnSaveProduct');
+        btnSave.classList.add('loading'); // Kích hoạt animation spinner
+        
+        // Đóng gói data
+        const formObj = {
+            rowIndex: document.getElementById('rowIndex').value,
+            productId: document.getElementById('productId').value,
+            productName: document.getElementById('productName').value,
+            catId: document.getElementById('catId').value,
+            supplierId: document.getElementById('supplierId').value,
+            unit: document.getElementById('unit').value,
+            unitPrice: document.getElementById('unitPrice').value,
+            minStock: document.getElementById('minStock').value
+        };
+
+        // Gọi Backend Cập nhật/Thêm mới
+        google.script.run
+            .withSuccessHandler(function(res) {
+                btnSave.classList.remove('loading');
+                if(res.success) {
+                    modal.classList.remove('active');
+                    loadProducts(); // Update UI table automatically
+                } else {
+                    alert("Lỗi hệ thống: " + res.message);
+                }
+            })
+            .saveProduct(formObj);
+    });
+});
+
+function loadProducts() {
+    google.script.run
+        .withSuccessHandler(function(res) {
+            if (res.success) {
+                globalProductsData = res.data;
+                renderTable(res.data);
+            } else {
+                alert("Lỗi tải data: " + res.message);
+            }
+        })
+        .getProductsData();
+}
+
+function loadFormData() {
+    google.script.run
+      .withSuccessHandler(function(res) {
+          if (res.success) {
+              const catSelect = document.getElementById('catId');
+              const supSelect = document.getElementById('supplierId');
+              
+              catSelect.innerHTML = res.categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+              supSelect.innerHTML = res.suppliers.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+          }
+      })
+      .getFormDataOptions();
+}
+
+function renderTable(data) {
+    const tbody = document.getElementById('productsBody');
+    if (data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;">Không có sản phẩm nào</td></tr>`;
+        feather.replace();
+        return;
+    }
+
+    let html = '';
+    data.forEach(item => {
+        
+        let statusHtml = '';
+        if (item.Status === 'empty') statusHtml = `<span class="chip chip-danger"><span class="dot"></span> Hết hàng</span>`;
+        else if (item.Status === 'low') statusHtml = `<span class="chip chip-warning"><span class="dot"></span> Sắp hết</span>`;
+        else statusHtml = `<span class="chip chip-success"><span class="dot"></span> Đủ kho</span>`;
+
+        const pPrice = item.Unit_Price ? Number(item.Unit_Price).toLocaleString('vi-VN') + ' đ' : '-';
+
+        html += `
+        <tr class="data-row">
+            <td class="fw-bold">${item.Product_ID}</td>
+            <td>${item.Product_Name}</td>
+            <td>${item.Category_Name}</td>
+            <td>${item.Supplier_Name}</td>
+            <td style="text-align: right;">${pPrice}</td>
+            <td style="text-align: right; font-weight: 600;">${item.Current_Stock} ${item.Unit || ''}</td>
+            <td style="text-align: center;">${statusHtml}</td>
+            <td style="text-align: center;">
+                <button class="action-btn text-accent" onclick="editMode('${item.Product_ID}')" title="Sửa"><i data-feather="edit-2"></i></button>
+                <button class="action-btn text-danger" onclick="deleteMode('${item.Product_ID}')" title="Xóa"><i data-feather="trash-2"></i></button>
+            </td>
+        </tr>`;
+    });
+    
+    tbody.innerHTML = html;
+    feather.replace(); // Reset feather icons
+}
+
+// Hàm chuẩn bị data lúc ấn nút Edit
+function editMode(id) {
+    const p = globalProductsData.find(item => item.Product_ID === id);
+    if (!p) return;
+
+    document.getElementById('modalTitle').innerText = 'Chỉnh Sửa Sản Phẩm';
+    const form = document.getElementById('productForm');
+    
+    document.getElementById('rowIndex').value = p._rowIndex;
+    const pidInput = document.getElementById('productId');
+    pidInput.value = p.Product_ID;
+    pidInput.setAttribute('readonly', 'readonly'); // Khóa cập nhật mã SP
+    
+    document.getElementById('productName').value = p.Product_Name;
+    document.getElementById('catId').value = p.Cat_ID;
+    document.getElementById('supplierId').value = p.Supplier_ID;
+    document.getElementById('unit').value = p.Unit;
+    document.getElementById('unitPrice').value = p.Unit_Price;
+    document.getElementById('minStock').value = p.Min_Stock;
+
+    document.getElementById('productModal').classList.add('active');
+}
+
+function openAddModal() {
+    document.getElementById('modalTitle').innerText = 'Thêm Sản Phẩm Mới';
+    const form = document.getElementById('productForm');
+    form.reset();
+    document.getElementById('rowIndex').value = '';
+    
+    // Mở khóa mã SP khi tạo mới
+    document.getElementById('productId').removeAttribute('readonly');
+
+    document.getElementById('productModal').classList.add('active');
+}
+
+function deleteMode(id) {
+    if(confirm(`Nghiệm trọng: Xoá mã [${id}] sẽ kiến các giao dịch lịch sử bị mất thông tin Sản phẩm tương ứng.\nBạn có chắn chắn muốn xoá khỏi database?`)) {
+        
+        google.script.run
+            .withSuccessHandler(function(res) {
+                if(res.success) {
+                    alert(res.message);
+                    loadProducts(); // Load lại bảng
+                } else {
+                    alert("Lỗi Xóa: " + res.message);
+                }
+            })
+            .deleteProduct(id);
+    }
+}
+</script>

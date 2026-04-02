@@ -1,0 +1,45 @@
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    feather.replace();
+
+    const sessionStr = sessionStorage.getItem('warehouse_user');
+    if (!sessionStr) {
+        if (APP_URL) window.top.location.href = APP_URL + "?page=index";
+        return;
+    }
+
+    // Pass session check, hien thi body
+    document.getElementById('dashboardLayout').style.display = 'flex';
+
+    // Set User info
+    try {
+        const user = JSON.parse(sessionStr);
+        document.getElementById('userName').textContent = user.name || 'Người dùng';
+        document.getElementById('userRole').textContent = user.role || 'Staff';
+        if (user.name) document.getElementById('userAvatar').textContent = user.name.charAt(0).toUpperCase();
+    } catch (e) { console.error(e); }
+
+    const navLinks = document.querySelectorAll('.layout-nav');
+    const pageTitle = document.getElementById('pageTitle');
+
+    // Chuyển menu tự động nhận diện trang hiện tại
+    navLinks.forEach(link => {
+        const page = link.getAttribute('data-page');
+        
+        // Active mark
+        if (page === CURRENT_PAGE || (CURRENT_PAGE==='NotFound' && page==='Dashboard')) {
+             link.classList.add('active');
+             pageTitle.textContent = link.textContent.trim();
+        }
+    });
+
+    // Thoát
+    const btnLogout = document.getElementById('btnLogout');
+    if (btnLogout) {
+        btnLogout.addEventListener('click', () => {
+            sessionStorage.removeItem('warehouse_user');
+            window.top.location.href = APP_URL + "?page=index";
+        });
+    }
+});
+</script>

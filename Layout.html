@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <?!= include('Style'); ?>
+    <title>Hệ Sinh Thái Kho</title>
+    <script src="https://unpkg.com/feather-icons"></script>
+</head>
+<body>
+    <div class="dashboard-container" style="display: none;" id="dashboardLayout">
+        
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="brand">
+                    <div class="brand-icon">
+                        <i data-feather="box" style="stroke: white;"></i>
+                    </div>
+                    <span>Quản Lý Kho</span>
+                </div>
+            </div>
+
+            <!-- Các nút chuyển trang này sẽ kích hoạt URL có Param để GAS Render ra Master Page Mới -->
+            <ul class="nav-links">
+                <li class="nav-item"><a class="nav-link layout-nav" href="<?= getScriptUrl() ?>?page=Dashboard" target="_top" data-page="Dashboard"><i data-feather="grid"></i> Layout Chính</a></li>
+                <li class="nav-item"><a class="nav-link layout-nav" href="<?= getScriptUrl() ?>?page=Products" target="_top" data-page="Products"><i data-feather="package"></i> Sản Phẩm</a></li>
+                <li class="nav-item"><a class="nav-link layout-nav" href="<?= getScriptUrl() ?>?page=Transactions" target="_top" data-page="Transactions"><i data-feather="refresh-cw"></i> Nhập / Xuất kho</a></li>
+                <li class="nav-item"><a class="nav-link layout-nav" href="<?= getScriptUrl() ?>?page=Alerts" target="_top" data-page="Alerts"><i data-feather="alert-triangle"></i> Cảnh báo tồn kho</a></li>
+                <li class="nav-item"><a class="nav-link layout-nav" href="<?= getScriptUrl() ?>?page=Suppliers" target="_top" data-page="Suppliers"><i data-feather="truck"></i> Nhà cung cấp</a></li>
+                <li class="nav-item"><a class="nav-link layout-nav" href="<?= getScriptUrl() ?>?page=Users" target="_top" data-page="Users"><i data-feather="users"></i> Quản lý người dùng</a></li>
+            </ul>
+
+            <div class="sidebar-footer">
+                <div class="user-profile">
+                    <div class="avatar" id="userAvatar">A</div>
+                    <div class="user-info">
+                        <div class="name" id="userName">Admin</div>
+                        <div class="role" id="userRole">Admin</div>
+                    </div>
+                </div>
+                <button class="btn-logout" id="btnLogout">
+                    <i data-feather="log-out"></i> Đăng xuất
+                </button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-header">
+                <!-- Tiêu đề trang sẽ tự cập nhật bằng Javascript -->
+                <h2 class="page-title" id="pageTitle">...</h2>
+                <div class="header-actions">
+                    <button class="icon-btn" title="Thông báo">
+                        <i data-feather="bell"></i>
+                    </button>
+                    <button class="icon-btn" title="Cài đặt">
+                        <i data-feather="settings"></i>
+                    </button>
+                </div>
+            </header>
+
+            <div class="content-area">
+                <!-- ĐÂY CHÍNH LÀ NƠI MASTER PAGE TIẾP NHẬN FILE HTML CON -->
+                <? try { ?>
+                   <?!= include(contentPage); ?>
+                <? } catch(e) { ?>
+                   <div class="empty-state">
+                      <div class="empty-state-icon"><i data-feather="tool"></i></div>
+                      <h3>Đang Xây Dựng Trang</h3>
+                      <p>Tính năng [<?= contentPage ?>] chưa có layout cụ thể. Vui lòng quay lại sau.</p>
+                   </div>
+                <? } ?>
+            </div>
+        </main>
+    </div>
+
+    <script>
+      const APP_URL = "<?= getScriptUrl() ?>";
+      const CURRENT_PAGE = "<?= contentPage ?>";
+    </script>
+    <?!= include('LayoutJS'); ?>
+</body>
+</html>

@@ -1,0 +1,97 @@
+<div class="module-header">
+    <div class="module-actions">
+        <div class="search-box">
+            <i data-feather="search"></i>
+            <input type="text" id="searchInput" placeholder="Tìm tên, mã sản phẩm..." class="form-control" style="width: 250px;">
+        </div>
+        <button class="btn-primary" id="btnAddNew" style="width: auto;">
+            <i data-feather="plus"></i> Thêm Sản Phẩm Mới
+        </button>
+    </div>
+</div>
+
+<div class="table-card">
+    <table class="data-table" id="productsTable">
+        <thead>
+            <tr>
+                <th>Mã SP</th>
+                <th>Tên Sản Phẩm</th>
+                <th>Danh Mục</th>
+                <th>Nhà Cung Cấp</th>
+                <th style="text-align: right;">Đơn Giá</th>
+                <th style="text-align: right;">Tồn kho</th>
+                <th style="text-align: center;">Trạng thái</th>
+                <th style="text-align: center;">Hành động</th>
+            </tr>
+        </thead>
+        <tbody id="productsBody">
+            <tr>
+                <td colspan="8" style="text-align: center; padding: 40px;">
+                    <div class="spinner" style="display:inline-block; border-top-color: var(--accent-primary);"></div>
+                    <p style="margin-top: 10px; color: var(--text-secondary)">Đang đồng bộ dữ liệu từ sever...</p>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal Form: Add / Edit Product -->
+<div class="modal" id="productModal">
+    <div class="modal-dialog">
+        <div class="modal-header">
+            <h3 id="modalTitle">Thêm Sản Phẩm</h3>
+            <button class="icon-btn" id="btnCloseModal"><i data-feather="x"></i></button>
+        </div>
+        <div class="modal-body">
+            <form id="productForm">
+                <input type="hidden" id="rowIndex">
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Mã Sản Phẩm *</label>
+                        <input type="text" id="productId" class="form-control" required placeholder="VD: SP001">
+                    </div>
+                    <div class="form-group" style="flex: 2;">
+                        <label class="form-label">Tên Sản Phẩm *</label>
+                        <input type="text" id="productName" class="form-control" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Danh Mục</label>
+                        <select id="catId" class="form-control"><option>Đang load...</option></select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Nhà Cung Cấp</label>
+                        <select id="supplierId" class="form-control"><option>Đang load...</option></select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Đơn vị (Unit)</label>
+                        <input type="text" id="unit" class="form-control" placeholder="Cái/Hộp/Kg...">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Đơn giá</label>
+                        <input type="number" id="unitPrice" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Tồn tối thiểu (Cảnh báo)*</label>
+                        <input type="number" id="minStock" class="form-control" required min="0" value="10">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <button type="submit" class="btn-primary" id="btnSaveProduct">
+                        <span class="text">Lưu Thông Tin</span>
+                        <div class="spinner"></div>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<?!= include('ProductsJS'); ?>
