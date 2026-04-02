@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng nhập - Hệ thống Quản Lý Kho</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <h1>Hệ Sinh Thái Kho</h1>
+                <p>Đăng nhập bằng tài khoản nội bộ để tiếp tục</p>
+            </div>
+            
+            <div class="alert" id="loginAlert"></div>
+
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="email" class="form-label">Email quản trị</label>
+                    <input type="email" id="email" class="form-control" placeholder="name@domain.com" required autocomplete="email">
+                </div>
+                
+                <div class="form-group">
+                    <label for="password" class="form-label">Mật khẩu</label>
+                    <input type="password" id="password" class="form-control" placeholder="Nhập mật khẩu" required autocomplete="current-password">
+                </div>
+                
+                <button type="submit" class="btn-primary" id="btnLogin">
+                    <span class="text">Đăng Nhập</span>
+                    <div class="spinner"></div>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Script connection logic -->
+    <script src="app.js"></script>
+</body>
+</html>

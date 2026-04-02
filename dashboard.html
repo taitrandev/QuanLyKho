@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ sinh thái Quản Lý Kho</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Feather icons cho design premium -->
+    <script src="https://unpkg.com/feather-icons"></script>
+</head>
+<body>
+    <div class="dashboard-container" style="display: none;" id="dashboardLayout">
+        
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="brand">
+                    <div class="brand-icon">
+                        <i data-feather="box" style="stroke: white;"></i>
+                    </div>
+                    <span>Quản Lý Kho</span>
+                </div>
+            </div>
+
+            <nav class="nav-links" id="sidebarNav">
+                <li class="nav-item">
+                    <a href="#" class="nav-link active" data-target="dashboard-tab">
+                        <i data-feather="grid"></i> Layout Chính
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" data-target="products-tab">
+                        <i data-feather="package"></i> Sản Phẩm
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" data-target="io-tab">
+                        <i data-feather="refresh-cw"></i> Nhập / Xuất kho
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" data-target="alert-tab">
+                        <i data-feather="alert-triangle"></i> Cảnh báo tồn kho
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" data-target="suppliers-tab">
+                        <i data-feather="truck"></i> Nhà cung cấp
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" data-target="users-tab">
+                        <i data-feather="users"></i> Quản lý người dùng
+                    </a>
+                </li>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-profile">
+                    <div class="avatar" id="userAvatar">A</div>
+                    <div class="user-info">
+                        <div class="name" id="userName">Admin</div>
+                        <div class="role" id="userRole">Admin</div>
+                    </div>
+                </div>
+                <button class="btn-logout" id="btnLogout">
+                    <i data-feather="log-out"></i>
+                    Đăng xuất
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-header">
+                <h2 class="page-title" id="pageTitle">Layout Chính</h2>
+                <div class="header-actions">
+                    <button class="icon-btn" title="Thông báo">
+                        <i data-feather="bell"></i>
+                    </button>
+                    <button class="icon-btn" title="Cài đặt">
+                        <i data-feather="settings"></i>
+                    </button>
+                </div>
+            </header>
+
+            <div class="content-area">
+                
+                <!-- Tab: Dashboard -->
+                <div class="tab-pane active" id="dashboard-tab">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">
+                            <i data-feather="grid"></i>
+                        </div>
+                        <h3>Chưa có dữ liệu thống kê</h3>
+                        <p>Tab "Dashboard" hiện đang được tạo layout, dữ liệu tổng quan sẽ sớm được tích hợp.</p>
+                    </div>
+                </div>
+
+                <!-- Tab: Sản Phẩm -->
+                <div class="tab-pane" id="products-tab">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">
+                            <i data-feather="package"></i>
+                        </div>
+                        <h3>Quản lý sản phẩm trống</h3>
+                        <p>Bảng danh sách vật tư/sản phẩm sẽ hiển thị tại đây.</p>
+                    </div>
+                </div>
+
+                <!-- Tab: Nhập / Xuất Kho -->
+                <div class="tab-pane" id="io-tab">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">
+                            <i data-feather="refresh-cw"></i>
+                        </div>
+                        <h3>Chưa có giao dịch</h3>
+                        <p>Phiếu nhập và phiếu xuất sẽ được tạo lập từ giao diện này.</p>
+                    </div>
+                </div>
+
+                <!-- Tab: Cảnh báo tồn kho -->
+                <div class="tab-pane" id="alert-tab">
+                    <div class="empty-state">
+                        <div class="empty-state-icon" style="color: var(--warning); background: rgba(245, 158, 11, 0.1);">
+                            <i data-feather="alert-triangle"></i>
+                        </div>
+                        <h3>An toàn vật tư</h3>
+                        <p>Các sản phẩm dưới định mức tồn kho an toàn sẽ được báo động ở đây.</p>
+                    </div>
+                </div>
+
+                <!-- Tab: Nhà cung cấp -->
+                <div class="tab-pane" id="suppliers-tab">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">
+                            <i data-feather="truck"></i>
+                        </div>
+                        <h3>Danh sách rỗng</h3>
+                        <p>Thông tin các đối tác, nhà cung cấp sẽ được quản lý tại trang này.</p>
+                    </div>
+                </div>
+
+                <!-- Tab: Quản lý người dùng -->
+                <div class="tab-pane" id="users-tab">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">
+                            <i data-feather="users"></i>
+                        </div>
+                        <h3>Quản trị quyền truy cập</h3>
+                        <p>Tính năng này dành cho phân quyền staff/viewer cho các nhân sự mới lập tài khoản.</p>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script src="dashboard.js"></script>
+    <script>
+        // Khởi tạo icons
+        feather.replace();
+    </script>
+</body>
+</html>
