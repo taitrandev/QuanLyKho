@@ -1,107 +1,98 @@
-function doPost(e) {
+/**
+ * Hàm hỗ trợ nhúng nội dung file HTML con vào file HTML chính
+ */
+function include(filename) {
+  return HtmlService.createHtmlOutputFromFile(filename).getContent();
+}
+
+/**
+ * Hàm điều hướng hiển thị trang dựa theo tham số URL (?page=...)
+ */
+function doGet(e) {
+  let page = e.parameter.page;
+  if (!page) {
+    page = 'Index'; // Trang mặc định là Đăng nhập
+  } else {
+    // Chữ cái đầu viết hoa cho đúng tên file: vd ?page=dashboard -> Dashboard
+    page = page.charAt(0).toUpperCase() + page.slice(1);
+  }
+
+  // Khởi tạo template để có thể render các thẻ <?!= include('...') ?>
   try {
-    const sheetId = SpreadsheetApp.getActiveSpreadsheet().getId(); // Assuming script is bound to the sheet, or use openById
-    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Users");
-    
-    // Sometimes payload comes as e.postData.contents depending on how fetch is called
-    let data;
-    try {
-      data = JSON.parse(e.postData.contents);
-    } catch(err) {
-      // Fallback for form data
-      data = e.parameter;
-    }
-
-    const action = data.action;
-
-    if (action === "login") {
-      const email = data.email;
-      const password = data.password;
-
-      // Ensure sheet exists
-      if (!sheet) {
-         return ContentService.createTextOutput(JSON.stringify({ 
-          success: false, 
-          message: "Sheet 'Users' not found in this spreadsheet." 
-        })).setMimeType(ContentService.MimeType.JSON);
-      }
-
-      const values = sheet.getDataRange().getValues();
-      const headers = values[0];
-      
-      const emailIndex = headers.indexOf("Email");
-      const passwordIndex = headers.indexOf("Password");
-      const activeIndex = headers.indexOf("Active");
-      const roleIndex = headers.indexOf("Role");
-      const nameIndex = headers.indexOf("Full_Name");
-      const idIndex = headers.indexOf("User_ID");
-
-      if (emailIndex === -1 || passwordIndex === -1) {
-         return ContentService.createTextOutput(JSON.stringify({ 
-          success: false, 
-          message: "Invalid table structure. Cannot find Email or Password columns." 
-        })).setMimeType(ContentService.MimeType.JSON);
-      }
-
-      for (let i = 1; i < values.length; i++) {
-        const row = values[i];
-        if (row[emailIndex] === email) {
-          if (row[passwordIndex].toString() === password.toString()) {
-            // Check Active status, be careful with boolean or string representation
-            const isActive = row[activeIndex] === true || row[activeIndex] === "TRUE" || row[activeIndex] === "true" || row[activeIndex] === 1;
-            
-            if (!isActive) {
-              return ContentService.createTextOutput(JSON.stringify({ 
-                success: false, 
-                message: "Account is inactive. Please contact administrator." 
-              })).setMimeType(ContentService.MimeType.JSON);
-            }
-
-            // Login successful
-            return ContentService.createTextOutput(JSON.stringify({ 
-              success: true, 
-              message: "Login successful",
-              user: {
-                id: row[idIndex],
-                name: row[nameIndex],
-                email: row[emailIndex],
-                role: row[roleIndex]
-              }
-            })).setMimeType(ContentService.MimeType.JSON);
-          } else {
-             return ContentService.createTextOutput(JSON.stringify({ 
-              success: false, 
-              message: "Incorrect password" 
-            })).setMimeType(ContentService.MimeType.JSON);
-          }
-        }
-      }
-
-      // Email not found
-      return ContentService.createTextOutput(JSON.stringify({ 
-        success: false, 
-        message: "Email not found" 
-      })).setMimeType(ContentService.MimeType.JSON);
-    }
-
-    return ContentService.createTextOutput(JSON.stringify({ 
-        success: false, 
-        message: "Invalid action" 
-      })).setMimeType(ContentService.MimeType.JSON);
-
+    let template = HtmlService.createTemplateFromFile(page);
+    let output = template.evaluate();
+    output.setTitle('Kho Hệ Sinh Thái');
+    output.setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+    // Thêm thẻ meta viewport để Responsive
+    output.addMetaTag('viewport', 'width=device-width, initial-scale=1');
+    return output;
   } catch (error) {
-    return ContentService.createTextOutput(JSON.stringify({ 
-        success: false, 
-        message: "Server Error: " + error.toString() 
-      })).setMimeType(ContentService.MimeType.JSON);
+    // Return to index if page not found
+    return HtmlService.createTemplateFromFile('Index').evaluate().setTitle('Kho Hệ Sinh Thái');
   }
 }
 
-// Ensure preflight standard responds properly (OPTIONS method)
-function doOptions(e) {
-  return ContentService.createTextOutput("")
-    .setMimeType(ContentService.MimeType.JAVASCRIPT)
-    .setHeader("Access-Control-Allow-Origin", "*")
-    .setHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
-    .setHeader("Access-Control-Allow-Headers", "Content-Type");
+/**
+ * Hàm hỗ trợ lấy web app url
+ */
+function getScriptUrl() {
+  return ScriptApp.getService().getUrl();
+}
+
+/**
+ * Thực thi Server Script để kiểm tra Đăng Nhập
+ * Được gọi trực tiếp từ client qua google.script.run.login(...)
+ */
+function login(email, password) {
+  try {
+    const sheetId = SpreadsheetApp.getActiveSpreadsheet().getId();
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Users");
+    
+    if (!sheet) {
+       return { success: false, message: "Không tìm thấy Sheet 'Users' trong bảng tính này." };
+    }
+
+    const values = sheet.getDataRange().getValues();
+    const headers = values[0];
+    
+    const emailIndex = headers.indexOf("Email");
+    const passwordIndex = headers.indexOf("Password");
+    const activeIndex = headers.indexOf("Active");
+    const roleIndex = headers.indexOf("Role");
+    const nameIndex = headers.indexOf("Full_Name");
+
+    if (emailIndex === -1 || passwordIndex === -1) {
+       return { success: false, message: "Cấu trúc cột không hợp lệ. Không tìm thấy cột Email hoặc Password." };
+    }
+
+    for (let i = 1; i < values.length; i++) {
+        const row = values[i];
+        if (row[emailIndex] === email) {
+            if (row[passwordIndex].toString() === password.toString()) {
+                const isActive = row[activeIndex] === true || row[activeIndex] === "TRUE" || row[activeIndex] === "true" || row[activeIndex] === 1;
+                
+                if (!isActive) {
+                    return { success: false, message: "Tài khoản đang bị khóa. Hãy liên hệ Quản trị viên." };
+                }
+
+                // Thành công
+                return { 
+                    success: true, 
+                    message: "Đăng nhập thành công",
+                    user: {
+                        name: row[nameIndex],
+                        email: row[emailIndex],
+                        role: row[roleIndex]
+                    }
+                };
+            } else {
+               return { success: false, message: "Mật khẩu không chính xác." };
+            }
+        }
+    }
+
+    return { success: false, message: "Không tìm thấy Email này." };
+  } catch (error) {
+    return { success: false, message: "Lỗi hệ thống: " + error.toString() };
+  }
 }

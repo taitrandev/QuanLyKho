@@ -1,0 +1,61 @@
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Nếu trong session giữ trạng thái đã đăng nhập thì redirect qua page dashboard qua URL App parameter
+    const sessionStr = sessionStorage.getItem('warehouse_user');
+    if (sessionStr && APP_URL) {
+        window.top.location.href = APP_URL + "?page=dashboard";
+        return;
+    }
+
+    const form = document.getElementById('loginForm');
+    const alertBox = document.getElementById('loginAlert');
+    const btnSubmit = document.getElementById('btnLogin');
+
+    if (form) {
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value.trim();
+
+            if (!email || !password) {
+                showAlert('Vui lòng nhập đầy đủ thông tin.');
+                return;
+            }
+
+            // Kích hoạt loading
+            btnSubmit.classList.add('loading');
+            alertBox.style.display = 'none';
+
+            // Gọi chạy hàm login() nằm tại file Code.gs thông qua google.script.run (hàm chuẩn của GAS)
+            google.script.run
+                .withSuccessHandler(function(response) {
+                    btnSubmit.classList.remove('loading');
+                    if (response.success) {
+                        // Lưu thông tin 
+                        sessionStorage.setItem('warehouse_user', JSON.stringify(response.user));
+                        // Chuyển tới dashboard Page bằng App URL Router
+                        window.top.location.href = APP_URL + "?page=dashboard"; 
+                    } else {
+                        showAlert(response.message);
+                        alertBox.style.display = 'block';
+                    }
+                })
+                .withFailureHandler(function(error) {
+                    btnSubmit.classList.remove('loading');
+                    showAlert('Đã có lỗi mạng/script: ' + error.message);
+                    alertBox.style.display = 'block';
+                })
+                .login(email, password);
+        });
+    }
+});
+
+function showAlert(message) {
+    const alertBox = document.getElementById('loginAlert');
+    if (alertBox) {
+        alertBox.textContent = message;
+        alertBox.className = 'alert error';
+    }
+}
+</script>

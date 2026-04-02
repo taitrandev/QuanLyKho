@@ -1,10 +1,8 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Đăng nhập - Hệ thống Quản Lý Kho</title>
-    <link rel="stylesheet" href="style.css">
+    <?!= include('Style'); ?>
+    <title>Đăng nhập - Quản Lý Kho</title>
 </head>
 <body>
     <div class="login-container">
@@ -35,7 +33,10 @@
         </div>
     </div>
 
-    <!-- Script connection logic -->
-    <script src="app.js"></script>
+    <!-- Script that contains Google Apps Script AppUrl -->
+    <script>
+      const APP_URL = "<?= getScriptUrl() ?>";
+    </script>
+    <?!= include('IndexJS'); ?>
 </body>
 </html>
